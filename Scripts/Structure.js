@@ -14,6 +14,6 @@ import { } from "./Components/InterfaceItem.js";
 import { } from "./Components/Corporeal.js";
 import { } from "./Components/Utilities.js";
 
-// Your code goes here
+// verticles, edges
 
 export { };

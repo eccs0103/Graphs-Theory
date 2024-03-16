@@ -1,6 +1,7 @@
 "use strict";
 
 import { progenitor } from "../Scripts/Components/Node.js";
+import { Random } from "../Scripts/Modules/Generators.js";
 import { } from "../Scripts/Structure.js";
 
 try {
