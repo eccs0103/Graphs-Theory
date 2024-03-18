@@ -1,7 +1,7 @@
 "use strict";
 
 import { Point2D } from "../Modules/Measures.js";
-import { progenitor, display } from "./Node.js";
+import { progenitor, engine } from "./Node.js";
 import { CONSTANT_TWO_2D, Entity } from "./Entity.js";
 
 /** @type {Corporeal[]} */
@@ -141,7 +141,7 @@ class Corporeal extends Entity {
 
 		this.addEventListener(`update`, (event) => {
 			this.velocity = this.velocity["+"](this.acceleration);
-			this.position = this.position["+"](this.#velocity["*"](Point2D.repeat(display.delta)));
+			this.position = this.position["+"](this.#velocity["*"](Point2D.repeat(engine.delta)));
 		});
 	}
 	/**

@@ -1,6 +1,6 @@
 "use strict";
 
-import { FastDisplay } from "../Modules/Executors.js";
+import { FastEngine } from "../Modules/Executors.js";
 import { } from "../Modules/Extensions.js";
 
 /**
@@ -13,19 +13,22 @@ const canvas = document.getElement(HTMLCanvasElement, `canvas#display`);
 const context = canvas.getContext(`2d`) ?? (() => {
 	throw new TypeError(`Context is missing`);
 })();
-/**
- * Represents a FastDisplay instance using the canvas context.
- */
-const display = new FastDisplay(context);
+window.addEventListener(`resize`, (event) => {
+	const { width, height } = canvas.getBoundingClientRect();
+	canvas.width = width;
+	canvas.height = height;
 
-display.addEventListener(`resize`, (event) => {
 	const transform = context.getTransform();
 	transform.e = canvas.width / 2;
 	transform.f = canvas.height / 2;
 	transform.d *= -1;
 	context.setTransform(transform);
 });
-display.dispatchEvent(new UIEvent(`resize`));
+
+/**
+ * Represents a FastEngine instance using the canvas context.
+ */
+const engine = new FastEngine();
 
 //#region Modification event
 /**
@@ -297,10 +300,10 @@ class Progenitor extends Node {
 			throw new EvalError(`Progenitor can't be adopted by any node`);
 		});
 
-		display.addEventListener(`start`, (event) => {
+		engine.addEventListener(`start`, (event) => {
 			this.dispatchEvent(new Event(event.type, { bubbles: true }));
 		});
-		display.addEventListener(`update`, (event) => {
+		engine.addEventListener(`update`, (event) => {
 			this.dispatchEvent(new Event(event.type, { bubbles: true }));
 		});
 	}
@@ -337,4 +340,4 @@ class Progenitor extends Node {
  */
 const progenitor = Progenitor.instance;
 
-export { canvas, context, display, ModificationEvent, Group, Node, progenitor };
+export { canvas, context, engine, ModificationEvent, Group, Node, progenitor };

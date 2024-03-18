@@ -7,17 +7,17 @@ import { Renderer } from "../Scripts/Components/Utilities.js";
 import { Matrix, Point2D } from "../Scripts/Modules/Measures.js";
 import { } from "../Scripts/Structure.js";
 
-const { max } = Math;
+const { min, max } = Math;
 
-//#region Verticle tntity
+const POINT2D_CONSTANT_TWO = Object.freeze(Point2D.repeat(2));
+
+//#region Verticle entity
 class VerticleEntity extends Entity {
 	/**
 	 * @param {string} name 
 	 */
 	constructor(name = ``) {
 		super(name);
-		this.diameter = 0;
-
 		this.addEventListener(`render`, (event) => {
 			Renderer.markArea(this);
 		});
@@ -42,11 +42,12 @@ class EdgeEntity extends Entity {
 }
 //#endregion
 
-const POINT2D_CONSTANT_TWO = Object.freeze(Point2D.repeat(2));
-
 canvas.addEventListener(`pointerdown`, async (event) => {
-	const pointPointerBeginPosition = new Point2D(event.clientX, event.clientY)["-"](userInterface.size["/"](POINT2D_CONSTANT_TWO));
-	
+	const pointPointerBeginPosition = new Point2D(event.clientX, event.clientY)["-"](userInterface.size["/"](POINT2D_CONSTANT_TWO))["*"](new Point2D(1, -1));
+	const verticleNew = new VerticleEntity(`Verticle`);
+	verticleNew.diameter = min(canvas.width, canvas.height) / 16;
+	verticleNew.position = pointPointerBeginPosition;
+	progenitor.children.add(verticleNew);
 });
 
 try {
