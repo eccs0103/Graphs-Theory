@@ -1,4 +1,4 @@
-verticles: 15
+vertices: 15
 connections:
 	- 1-2
 	- 4-6

@@ -1,7 +1,5 @@
 "use strict";
 
-const { min, max } = Math;
-
 import { } from "./Modules/Executors.js";
 import { } from "./Modules/Extensions.js";
 import { } from "./Modules/Generators.js";
@@ -16,6 +14,8 @@ import { } from "./Components/InterfaceItem.js";
 import { } from "./Components/Corporeal.js";
 import { } from "./Components/Utilities.js";
 
+const { min, max } = Math;
+
 //#region Vertice
 class Vertice { }
 //#endregion
@@ -27,11 +27,9 @@ class Edge {
 	 */
 	static parse(text) {
 		const match = /^(\d+)-(\d+)$/.exec(text);
-		if(match === null) throw new SyntaxError(`Unable to parse edge from '${(text)}'`);
+		if (match === null) throw new SyntaxError(`Unable to parse edge from '${(text)}'`);
 
-		const [, $vertice1, $vertice2] = match;
-		const vertice1 = Number($vertice1);
-		const vertice2 = Number($vertice2);
+		const [, vertice1, vertice2] = match.map(part => Number(part));
 
 		return [min(vertice1, vertice2), max(vertice1, vertice2)];
 	}
@@ -64,8 +62,8 @@ class Graph {
 	 * @returns {Graph}
 	 */
 	static parse(text) {
-		const match = /^vertices: (d+)\nconnections:?$/.exec(text) // TODO
-		if(match === null) throw new SyntaxError(`Unable to parse graph from '${(text)}'`);
+		const match = /^vertices: (d+)\nconnections:?$/.exec(text); // TODO
+		if (match === null) throw new SyntaxError(`Unable to parse graph from '${(text)}'`);
 
 		// TODO
 		throw new ReferenceError(`Not implemented function`);
@@ -125,7 +123,7 @@ class Graph {
 			throw new RangeError(`Vertice index ${from} is out of range [0 - ${this.#vertices.length})`);
 		const verticeFrom = this.#vertices[from];
 		if (!Number.isInteger(to) || 0 > to || to >= this.#vertices.length)
-			throw new RangeError(`Verticle index ${to} is out of range [0 - ${this.#vertices.length})`);
+			throw new RangeError(`Vertice index ${to} is out of range [0 - ${this.#vertices.length})`);
 		const verticeTo = this.#vertices[to];
 		const indexSelected = this.#edges.findIndex(edge => (edge.from === verticeFrom && edge.to === verticeTo));
 		if (indexSelected < 0) throw new ReferenceError(`Unable to find edge from ${from} to ${to}`);

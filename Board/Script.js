@@ -9,17 +9,17 @@ import { } from "../Scripts/Structure.js";
 
 const { min, max, hypot } = Math;
 
-//#region Verticle entity
-class VerticleEntity extends Entity {
-	/** @type {Set<VerticleEntity>} */
+//#region Vertice entity
+class VerticeEntity extends Entity {
+	/** @type {Set<VerticeEntity>} */
 	static #instances = new Set();
 	/**
 	 * @param {Readonly<Point2D>} position 
-	 * @param {VerticleEntity?} exception
-	 * @returns {VerticleEntity?}
+	 * @param {VerticeEntity?} exception
+	 * @returns {VerticeEntity?}
 	 */
-	static getVerticleAt(position, exception = null) {
-		for (const instance of VerticleEntity.#instances) {
+	static getVerticeAt(position, exception = null) {
+		for (const instance of VerticeEntity.#instances) {
 			if (exception === instance) continue;
 			const { x: xOther, y: yOther } = instance.globalPosition;
 			const { x: xThis, y: yThis } = position;
@@ -34,10 +34,10 @@ class VerticleEntity extends Entity {
 		super(name);
 
 		this.addEventListener(`connect`, (event) => {
-			VerticleEntity.#instances.add(this);
+			VerticeEntity.#instances.add(this);
 		});
 		this.addEventListener(`disconnect`, (event) => {
-			VerticleEntity.#instances.delete(this);
+			VerticeEntity.#instances.delete(this);
 		});
 
 		this.diameter = min(canvas.width, canvas.height) / 16;
@@ -50,7 +50,7 @@ class VerticleEntity extends Entity {
 		return super.size;
 	}
 	set size(value) {
-		throw new TypeError(`Cannot set property position of #<Verticle> which has only a getter`);
+		throw new TypeError(`Cannot set property position of #<Vertice> which has only a getter`);
 	}
 	get diameter() {
 		return max(super.size.x, super.size.y);
@@ -68,39 +68,50 @@ class EdgeEntity extends Entity {
 
 await window.load(Promise.fulfill(() => { }), 200, 1000);
 
+/**
+ * @param {MouseEvent} event 
+ * @returns {Readonly<Point2D>}
+ */
+function getMousePosition({ clientX: x, clientY: y }) {
+	const { x: xOffset, y: yOffset } = canvas.getBoundingClientRect();
+	const pointClientPosition = new Point2D(x, y);
+	const pointCanvasOffset = new Point2D(xOffset, yOffset);
+	return Object.freeze(pointClientPosition["-"](userInterface.size["/"](CONSTANT_TWO_2D))["*"](AXIS_FACTOR)["-"](pointCanvasOffset));
+}
+
 canvas.addEventListener(`pointerdown`, async (event) => {
 	const controller = new AbortController();
 	if (event.button !== 0) return;
-	const pointPointerBeginPosition = new Point2D(event.clientX, event.clientY)["-"](userInterface.size["/"](CONSTANT_TWO_2D))["*"](AXIS_FACTOR);
-	const verticleAlreadyExist = VerticleEntity.getVerticleAt(pointPointerBeginPosition);
+	const pointPointerBeginPosition = getMousePosition(event);
+	const verticeAlreadyExist = VerticeEntity.getVerticeAt(pointPointerBeginPosition);
 	await (/** @type {Promise<void>} */ (new Promise((resolve) => {
-		if (verticleAlreadyExist === null) {
+		if (verticeAlreadyExist === null) {
 			//#region New instance
 			window.addEventListener(`pointerup`, (event2) => {
 				if (event2.button !== 0) return;
-				const pointPointerEndPosition = new Point2D(event2.clientX, event2.clientY)["-"](userInterface.size["/"](CONSTANT_TWO_2D))["*"](AXIS_FACTOR);
-				if (VerticleEntity.getVerticleAt(pointPointerEndPosition) !== null) return;
-				const verticleNewInstance = new VerticleEntity(`Verticle`);
-				verticleNewInstance.globalPosition = pointPointerEndPosition;
-				progenitor.children.add(verticleNewInstance);
+				const pointPointerEndPosition = getMousePosition(event2);
+				if (VerticeEntity.getVerticeAt(pointPointerEndPosition) !== null) return;
+				const verticeNewInstance = new VerticeEntity(`Vertice`);
+				verticeNewInstance.globalPosition = pointPointerEndPosition;
+				progenitor.children.add(verticeNewInstance);
 				resolve();
 			}, { signal: controller.signal });
 			//#endregion
 		} else {
 			//#region Already exist
-			const pointInitialPosition = verticleAlreadyExist.globalPosition;
+			const pointInitialPosition = verticeAlreadyExist.globalPosition;
 			window.addEventListener(`pointerup`, (event2) => {
-				const pointCurrentPosition = verticleAlreadyExist.globalPosition;
+				const pointCurrentPosition = verticeAlreadyExist.globalPosition;
 				if (hypot(pointInitialPosition.x - pointCurrentPosition.x, pointInitialPosition.y - pointCurrentPosition.y) < 1) {
-					progenitor.children.remove(verticleAlreadyExist);
-				} else if (VerticleEntity.getVerticleAt(verticleAlreadyExist.globalPosition, verticleAlreadyExist) !== null) {
-					verticleAlreadyExist.globalPosition = pointInitialPosition;
+					progenitor.children.remove(verticeAlreadyExist);
+				} else if (VerticeEntity.getVerticeAt(verticeAlreadyExist.globalPosition, verticeAlreadyExist) !== null) {
+					verticeAlreadyExist.globalPosition = pointInitialPosition;
 				}
 				resolve();
 			}, { signal: controller.signal });
 			window.addEventListener(`pointermove`, (event2) => {
-				const pointPointerDragPosition = new Point2D(event2.clientX, event2.clientY)["-"](userInterface.size["/"](CONSTANT_TWO_2D))["*"](AXIS_FACTOR);
-				verticleAlreadyExist.globalPosition = pointPointerDragPosition;
+				const pointPointerDragPosition = getMousePosition(event2);
+				verticeAlreadyExist.globalPosition = pointPointerDragPosition;
 			}, { signal: controller.signal });
 			//#endregion
 		}
