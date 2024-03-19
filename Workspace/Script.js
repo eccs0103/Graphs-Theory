@@ -4,7 +4,7 @@ import { AXIS_FACTOR, CONSTANT_TWO_2D, Entity } from "../Scripts/Components/Enti
 import { userInterface } from "../Scripts/Components/InterfaceItem.js";
 import { canvas, progenitor } from "../Scripts/Components/Node.js";
 import { Renderer } from "../Scripts/Components/Utilities.js";
-import { Matrix, Point2D } from "../Scripts/Modules/Measures.js";
+import { Point2D } from "../Scripts/Modules/Measures.js";
 import { } from "../Scripts/Structure.js";
 
 const { min, max, hypot } = Math;
