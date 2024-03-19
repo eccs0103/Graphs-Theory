@@ -20,6 +20,13 @@ class Verticle { }
 //#region Edge
 class Edge {
 	/**
+	 * @param {string} text 
+	 * @returns {[number, number]}
+	 */
+	static parse(text) {
+		throw new ReferenceError(`Not implemented function`);
+	}
+	/**
 	 * @param {Verticle} from 
 	 * @param {Verticle} to 
 	 */
@@ -44,15 +51,14 @@ class Edge {
 //#region Graph
 class Graph {
 	/**
-	 * @param {Verticle[]} verticles 
-	 * @param {Edge[]} edges 
+	 * @param {string} text 
+	 * @returns {Graph}
 	 */
-	constructor(verticles, edges) {
-		this.#verticles = verticles;
-		this.#edges = edges;
+	static parse(text) {
+		throw new ReferenceError(`Not implemented function`);
 	}
 	/** @type {Verticle[]} */
-	#verticles;
+	#verticles = [];
 	/** @readonly */
 	get verticles() {
 		return Object.freeze(this.#verticles);
@@ -75,7 +81,7 @@ class Graph {
 		this.#verticles.splice(index, 1);
 	}
 	/** @type {Edge[]} */
-	#edges;
+	#edges = [];
 	/** @readonly */
 	get edges() {
 		return Object.freeze(this.#edges);

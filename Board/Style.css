@@ -1,11 +1,37 @@
 body {
 	position: fixed;
 	inset: 0;
+	display: grid;
+}
+
+nav {
+	overflow: hidden;
+	border-top-left-radius: 0 !important;
+}
+
+@media screen and (orientation: portrait) {
+	body {
+		grid-template-rows: auto 1fr;
+	}
+
+	nav {
+		border-top-right-radius: 0 !important;
+		flex-direction: row;
+	}
+}
+
+@media screen and (orientation: landscape) {
+	body {
+		grid-template-columns: auto 1fr;
+	}
+
+	nav {
+		border-bottom-left-radius: 0 !important;
+		flex-direction: column;
+	}
 }
 
 canvas#display {
-	position: absolute;
-	inset: 0;
 	width: 100%;
 	height: 100%;
 }
