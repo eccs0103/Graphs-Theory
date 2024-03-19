@@ -3,7 +3,10 @@
 ## Information
 
 ## Feed
-### 0.0.8 : Adaptive Game Engine 1.3.1 (19.03.2024)
+### 0.0.9 : Adaptive Game Engine 1.3.1 (19.03.2024)
+- Code optimized.
+- Design improved.
+- Simple interface added.
 - Added ability to add vertices.
 - Added ability to delete vertices.
 - Added ability to move vertices.
