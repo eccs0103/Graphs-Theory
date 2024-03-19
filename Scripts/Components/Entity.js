@@ -8,7 +8,12 @@ const { atan2, PI } = Math;
 /**
  * Represents a constant `Point2D(2, 2)` value.
  */
-const CONSTANT_TWO_2D = Point2D.repeat(2);
+const CONSTANT_TWO_2D = Object.freeze(Point2D.repeat(2));
+
+/**
+ * Represents a constant `Point2D(1, -1)` value.
+ */
+const AXIS_FACTOR = Object.freeze(new Point2D(1, -1));
 
 //#region Entity
 /** 
@@ -75,7 +80,7 @@ class Entity extends Node {
 			if (this.parent instanceof Entity) {
 				result = result["+"](this.parent.globalPosition);
 			}
-		} finally {
+		} catch { } finally {
 			return Object.freeze(result);
 		}
 	}
@@ -88,7 +93,7 @@ class Entity extends Node {
 			if (this.parent instanceof Entity) {
 				value = result["-"](this.parent.globalPosition);
 			}
-		} finally {
+		} catch { } finally {
 			this.#position = result;
 		}
 	}
@@ -134,4 +139,4 @@ class Entity extends Node {
 }
 //#endregion
 
-export { CONSTANT_TWO_2D, AreaSectors, Entity };
+export { CONSTANT_TWO_2D, AXIS_FACTOR, AreaSectors, Entity };
