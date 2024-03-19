@@ -1,5 +1,7 @@
 "use strict";
 
+const { min, max } = Math;
+
 import { } from "./Modules/Executors.js";
 import { } from "./Modules/Extensions.js";
 import { } from "./Modules/Generators.js";
@@ -14,8 +16,8 @@ import { } from "./Components/InterfaceItem.js";
 import { } from "./Components/Corporeal.js";
 import { } from "./Components/Utilities.js";
 
-//#region Verticle
-class Verticle { }
+//#region Vertice
+class Vertice { }
 //#endregion
 //#region Edge
 class Edge {
@@ -24,23 +26,30 @@ class Edge {
 	 * @returns {[number, number]}
 	 */
 	static parse(text) {
-		throw new ReferenceError(`Not implemented function`);
+		const match = /^(\d+)-(\d+)$/.exec(text);
+		if(match === null) throw new SyntaxError(`Unable to parse edge from '${(text)}'`);
+
+		const [, $vertice1, $vertice2] = match;
+		const vertice1 = Number($vertice1);
+		const vertice2 = Number($vertice2);
+
+		return [min(vertice1, vertice2), max(vertice1, vertice2)];
 	}
 	/**
-	 * @param {Verticle} from 
-	 * @param {Verticle} to 
+	 * @param {Vertice} from 
+	 * @param {Vertice} to 
 	 */
 	constructor(from, to) {
 		this.#from = from;
 		this.#to = to;
 	}
-	/** @type {Verticle} */
+	/** @type {Vertice} */
 	#from;
 	/** @readonly */
 	get from() {
 		return this.#from;
 	}
-	/** @type {Verticle} */
+	/** @type {Vertice} */
 	#to;
 	/** @readonly */
 	get to() {
@@ -55,30 +64,34 @@ class Graph {
 	 * @returns {Graph}
 	 */
 	static parse(text) {
+		const match = /^vertices: (d+)\nconnections:?$/.exec(text) // TODO
+		if(match === null) throw new SyntaxError(`Unable to parse graph from '${(text)}'`);
+
+		// TODO
 		throw new ReferenceError(`Not implemented function`);
 	}
-	/** @type {Verticle[]} */
-	#verticles = [];
+	/** @type {Vertice[]} */
+	#vertices = [];
 	/** @readonly */
-	get verticles() {
-		return Object.freeze(this.#verticles);
+	get vertices() {
+		return Object.freeze(this.#vertices);
 	}
 	/**
 	 * @returns {void}
 	 */
-	addVerticle() {
-		this.#verticles.push(new Verticle());
+	addVertice() {
+		this.#vertices.push(new Vertice());
 	}
 	/**
 	 * @param {number} index 
 	 * @returns {void}
 	 */
-	removeVerticle(index) {
-		if (!Number.isInteger(index) || 0 > index || index >= this.#verticles.length)
-			throw new RangeError(`Verticle index ${index} is out of range [0 - ${this.#verticles.length})`);
-		const verticleSelected = this.#verticles[index];
-		this.#edges = this.#edges.filter(edge => (edge.from !== verticleSelected && edge.to !== verticleSelected));
-		this.#verticles.splice(index, 1);
+	removeVertice(index) {
+		if (!Number.isInteger(index) || 0 > index || index >= this.#vertices.length)
+			throw new RangeError(`Vertice index ${index} is out of range [0 - ${this.#vertices.length})`);
+		const verticeSelected = this.#vertices[index];
+		this.#edges = this.#edges.filter(edge => (edge.from !== verticeSelected && edge.to !== verticeSelected));
+		this.#vertices.splice(index, 1);
 	}
 	/** @type {Edge[]} */
 	#edges = [];
@@ -92,15 +105,15 @@ class Graph {
 	 * @returns {void}
 	 */
 	addEdge(from, to) {
-		if (!Number.isInteger(from) || 0 > from || from >= this.#verticles.length)
-			throw new RangeError(`Verticle index ${from} is out of range [0 - ${this.#verticles.length})`);
-		const verticleFrom = this.#verticles[from];
-		if (!Number.isInteger(to) || 0 > to || to >= this.#verticles.length)
-			throw new RangeError(`Verticle index ${to} is out of range [0 - ${this.#verticles.length})`);
-		const verticleTo = this.#verticles[to];
-		if (this.#edges.find(edge => (edge.from === verticleFrom && edge.to === verticleTo)) !== undefined)
+		if (!Number.isInteger(from) || 0 > from || from >= this.#vertices.length)
+			throw new RangeError(`Vertice index ${from} is out of range [0 - ${this.#vertices.length})`);
+		const verticeFrom = this.#vertices[from];
+		if (!Number.isInteger(to) || 0 > to || to >= this.#vertices.length)
+			throw new RangeError(`Vertice index ${to} is out of range [0 - ${this.#vertices.length})`);
+		const verticeTo = this.#vertices[to];
+		if (this.#edges.find(edge => (edge.from === verticeFrom && edge.to === verticeTo)) !== undefined)
 			throw new EvalError(`Edge from ${from} to ${to} already exists`);
-		this.#edges.push(new Edge(verticleFrom, verticleTo));
+		this.#edges.push(new Edge(verticeFrom, verticeTo));
 	}
 	/**
 	 * @param {number} from 
@@ -108,17 +121,17 @@ class Graph {
 	 * @returns {void}
 	 */
 	removeEdge(from, to) {
-		if (!Number.isInteger(from) || 0 > from || from >= this.#verticles.length)
-			throw new RangeError(`Verticle index ${from} is out of range [0 - ${this.#verticles.length})`);
-		const verticleFrom = this.#verticles[from];
-		if (!Number.isInteger(to) || 0 > to || to >= this.#verticles.length)
-			throw new RangeError(`Verticle index ${to} is out of range [0 - ${this.#verticles.length})`);
-		const verticleTo = this.#verticles[to];
-		const indexSelected = this.#edges.findIndex(edge => (edge.from === verticleFrom && edge.to === verticleTo));
+		if (!Number.isInteger(from) || 0 > from || from >= this.#vertices.length)
+			throw new RangeError(`Vertice index ${from} is out of range [0 - ${this.#vertices.length})`);
+		const verticeFrom = this.#vertices[from];
+		if (!Number.isInteger(to) || 0 > to || to >= this.#vertices.length)
+			throw new RangeError(`Verticle index ${to} is out of range [0 - ${this.#vertices.length})`);
+		const verticeTo = this.#vertices[to];
+		const indexSelected = this.#edges.findIndex(edge => (edge.from === verticeFrom && edge.to === verticeTo));
 		if (indexSelected < 0) throw new ReferenceError(`Unable to find edge from ${from} to ${to}`);
 		this.#edges.splice(indexSelected, 1);
 	}
 }
 //#endregion
 
-export { Verticle, Edge, Graph };
+export { Vertice, Edge, Graph };
