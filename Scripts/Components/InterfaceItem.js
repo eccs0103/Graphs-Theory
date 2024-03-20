@@ -1,8 +1,8 @@
 "use strict";
 
 import { Point2D } from "../Modules/Measures.js";
-import { CONSTANT_TWO_2D, Entity } from "./Entity.js";
-import { ModificationEvent, canvas, engine, progenitor } from "./Node.js";
+import { Entity } from "./Entity.js";
+import { CONSTANT_TWO_2D, ModificationEvent, canvas, engine, progenitor } from "./Node.js";
 
 //#region Interface item
 /**

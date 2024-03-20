@@ -5,16 +5,6 @@ import { Point2D } from "../Modules/Measures.js";
 
 const { atan2, PI } = Math;
 
-/**
- * Represents a constant `Point2D(2, 2)` value.
- */
-const CONSTANT_TWO_2D = Object.freeze(Point2D.repeat(2));
-
-/**
- * Represents a constant `Point2D(1, -1)` value.
- */
-const AXIS_FACTOR = Object.freeze(new Point2D(1, -1));
-
 //#region Entity
 /** 
  * Enumeration representing different sectors in the area.
@@ -97,6 +87,16 @@ class Entity extends Node {
 			this.#position = result;
 		}
 	}
+	/**
+	 * Checks if a point is within the mesh of the entity.
+	 * @abstract
+	 * @param {Readonly<Point2D>} point - The point to check.
+	 * @returns {boolean} - Whether the point is within the mesh.
+	 * @throws {ReferenceError} - If function not implemented.
+	 */
+	isMesh(point) {
+		throw new ReferenceError(`Not implemented function`);
+	}
 	/** @type {Point2D} */
 	#size = Point2D.ZERO;
 	/**
@@ -139,4 +139,4 @@ class Entity extends Node {
 }
 //#endregion
 
-export { CONSTANT_TWO_2D, AXIS_FACTOR, AreaSectors, Entity };
+export { AreaSectors, Entity };

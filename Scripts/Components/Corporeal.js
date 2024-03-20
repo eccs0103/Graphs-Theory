@@ -1,8 +1,8 @@
 "use strict";
 
 import { Point2D } from "../Modules/Measures.js";
-import { progenitor, engine } from "./Node.js";
-import { CONSTANT_TWO_2D, Entity } from "./Entity.js";
+import { progenitor, engine, CONSTANT_TWO_2D } from "./Node.js";
+import { Entity } from "./Entity.js";
 
 /** @type {Corporeal[]} */
 const corporeals = [];
@@ -143,16 +143,6 @@ class Corporeal extends Entity {
 			this.velocity = this.velocity["+"](this.acceleration);
 			this.position = this.position["+"](this.#velocity["*"](Point2D.repeat(engine.delta)));
 		});
-	}
-	/**
-	 * Checks if a point is within the mesh of the corporeal entity.
-	 * @abstract
-	 * @param {Point2D} point - The point to check.
-	 * @returns {boolean} - Whether the point is within the mesh.
-	 * @throws {ReferenceError} - If function not implemented.
-	 */
-	isMesh(point) {
-		throw new ReferenceError(`Not implemented function`);
 	}
 	/** @type {Set<Corporeal>} */
 	#collisions = new Set();

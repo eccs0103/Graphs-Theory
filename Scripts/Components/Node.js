@@ -2,6 +2,7 @@
 
 import { FastEngine } from "../Modules/Executors.js";
 import { } from "../Modules/Extensions.js";
+import { Point2D } from "../Modules/Measures.js";
 
 /**
  * Represents the canvas element.
@@ -26,6 +27,16 @@ window.addEventListener(`resize`, (event) => {
 });
 
 /**
+ * Represents a constant `Point2D(1, -1)` value.
+ */
+const AXIS_FACTOR = Object.freeze(new Point2D(1, -1));
+
+/**
+ * Represents a constant `Point2D(2, 2)` value.
+ */
+const CONSTANT_TWO_2D = Object.freeze(Point2D.repeat(2));
+
+/**
  * Represents a FastEngine instance using the canvas context.
  */
 const engine = new FastEngine();
@@ -39,13 +50,13 @@ const engine = new FastEngine();
  */
 
 /**
- * Represents a ModificationEvent class used for tree modification events.
+ * Represents a modification event.
  */
 class ModificationEvent extends Event {
 	/**
 	 * Creates a new instance of ModificationEvent.
-	 * @param {string} type - The type of the event.
-	 * @param {ModificationEventInit} dict - The initialization dictionary.
+	 * @param {string} type The type of the event.
+	 * @param {ModificationEventInit} dict The initialization dictionary.
 	 */
 	constructor(type, dict) {
 		super(type, dict);
@@ -265,6 +276,52 @@ class Node extends EventTarget {
 	}
 }
 //#endregion
+
+//#region Device types
+/** @enum {string} */
+const DeviceTypes = {
+	/** @readonly */ mobile: `mobile`,
+	/** @readonly */ tablet: `tablet`,
+	/** @readonly */ desktop: `desktop`,
+};
+Object.freeze(DeviceTypes);
+//#endregion
+//#region Pointer event
+/**
+ * @typedef VirtualPointerEventInit
+ * @property {Readonly<Point2D>} position
+ * 
+ * @typedef {EventInit & VirtualPointerEventInit} PointerEventInit
+ */
+
+/**
+ * Represents a pointer event.
+ */
+class PointerEvent extends Event {
+	/**
+	 * Creates a new PointerEvent.
+	 * @param {string} type The type of the event.
+	 * @param {PointerEventInit} dict The initialization options for the event.
+	 */
+	constructor(type, dict) {
+		super(type, dict);
+		this.#position = dict.position;
+	}
+	/** @type {Readonly<Point2D>?} */
+	#position = null;
+	/**
+	 * Gets the position property of the PointerEvent.
+	 * @readonly
+	 * @throws {ReferenceError} If the property is missing.
+	 * @returns {Readonly<Point2D>} The position of the pointer.
+	 */
+	get position() {
+		return this.#position ?? (() => {
+			throw new ReferenceError(`Pointer property is missing`);
+		})();
+	}
+}
+//#endregion
 //#region Progenitor
 /**
  * Represents a special node called Progenitor with specific behaviors.
@@ -283,6 +340,18 @@ class Progenitor extends Node {
 			Progenitor.#locked = true;
 			return Progenitor.#instance;
 		})();
+	}
+	static #regexMobilePattern = /Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Silk/i;
+	static #regexTabletPattern = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i;
+
+	/**
+	 * @returns {DeviceTypes}
+	 */
+	static #getDeviceType() {
+		const agent = navigator.userAgent;
+		return this.#regexMobilePattern.test(agent) ? DeviceTypes.mobile
+			: this.#regexTabletPattern.test(agent) ? DeviceTypes.tablet
+				: DeviceTypes.desktop;
 	}
 	/** @type {boolean} */
 	static #locked = true;
@@ -306,6 +375,73 @@ class Progenitor extends Node {
 		engine.addEventListener(`update`, (event) => {
 			this.dispatchEvent(new Event(event.type, { bubbles: true }));
 		});
+
+		window.addEventListener(`resize`, (event) => {
+			this.#deviceType = Progenitor.#getDeviceType();
+		});
+
+		canvas.addEventListener(`mousedown`, (event) => {
+			if (event.button !== 0) return;
+			if (this.#deviceType !== DeviceTypes.desktop) return;
+			this.#fixMousePosition(event);
+			this.dispatchEvent(new PointerEvent(`pointerdown`, { position: this.#pointPointerPosition }));
+		});
+		window.addEventListener(`mouseup`, (event) => {
+			if (event.button !== 0) return;
+			if (this.#deviceType !== DeviceTypes.desktop) return;
+			this.#fixMousePosition(event);
+			this.dispatchEvent(new PointerEvent(`pointerup`, { position: this.#pointPointerPosition }));
+		});
+		window.addEventListener(`mousemove`, (event) => {
+			if (event.button !== 0) return;
+			if (this.#deviceType !== DeviceTypes.desktop) return;
+			this.#fixMousePosition(event);
+			this.dispatchEvent(new PointerEvent(`pointermove`, { position: this.#pointPointerPosition }));
+		});
+
+		canvas.addEventListener(`touchstart`, (event) => {
+			if (this.#deviceType !== DeviceTypes.mobile && this.#deviceType !== DeviceTypes.tablet) return;
+			this.#fixTouchPosition(event);
+			this.dispatchEvent(new PointerEvent(`pointerdown`, { position: this.#pointPointerPosition }));
+		});
+		window.addEventListener(`touchend`, (event) => {
+			if (this.#deviceType !== DeviceTypes.mobile && this.#deviceType !== DeviceTypes.tablet) return;
+			this.#fixTouchPosition(event);
+			this.dispatchEvent(new PointerEvent(`pointerup`, { position: this.#pointPointerPosition }));
+		});
+		window.addEventListener(`touchmove`, (event) => {
+			if (this.#deviceType !== DeviceTypes.mobile && this.#deviceType !== DeviceTypes.tablet) return;
+			this.#fixTouchPosition(event);
+			this.dispatchEvent(new PointerEvent(`pointermove`, { position: this.#pointPointerPosition }));
+		});
+	}
+	/** @type {DeviceTypes} */
+	#deviceType = Progenitor.#getDeviceType();
+	/** @type {Readonly<Point2D>} */
+	#pointPointerPosition = Object.freeze(Point2D.repeat(NaN));
+	/**
+	 * @param {MouseEvent} event 
+	 * @returns {void}
+	 */
+	#fixMousePosition(event) {
+		const { clientX: x, clientY: y } = event;
+		const { x: xOffset, y: yOffset, width, height } = canvas.getBoundingClientRect();
+		const pointClientPosition = new Point2D(x, y);
+		const pointCanvasOffset = new Point2D(-xOffset - width / 2, yOffset - height / 2);
+		this.#pointPointerPosition = Object.freeze(pointClientPosition["+"](pointCanvasOffset)["*"](AXIS_FACTOR));
+	}
+	/**
+	 * @param {TouchEvent} event 
+	 * @returns {void}
+	 */
+	#fixTouchPosition(event) {
+		const touch = event.touches.item(0);
+		if (touch === null) return;
+		const { clientX: x, clientY: y } = touch;
+		const { x: xOffset, y: yOffset, width, height } = canvas.getBoundingClientRect();
+		const pointClientPosition = new Point2D(x, y);
+		const pointCanvasOffset = new Point2D(-xOffset - width / 2, yOffset - height / 2);
+		this.#pointPointerPosition = Object.freeze(pointClientPosition["+"](pointCanvasOffset)["*"](AXIS_FACTOR));
 	}
 	/**
 	 * Dispatches an event to the Progenitor and its descendants.
@@ -340,4 +476,4 @@ class Progenitor extends Node {
  */
 const progenitor = Progenitor.instance;
 
-export { canvas, context, engine, ModificationEvent, Group, Node, progenitor };
+export { canvas, context, AXIS_FACTOR, CONSTANT_TWO_2D, engine, ModificationEvent, Group, Node, PointerEvent, progenitor };
