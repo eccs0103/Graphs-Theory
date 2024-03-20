@@ -4,10 +4,10 @@
 
 ## Feed
 ### 0.1.2 : Adaptive Game Engine 1.3.4 (21.03.2024)
-- Исправлена ошибка передвижения вершин графа.
-- Исправлена ошибка переключения темы.
-- Улучшен внешний вид.
-- Добавлена возможность сохранения хоста как картинку на устройстве.
+- Fixed error with graph vertice movement.
+- Fixed error with theme switching.
+- Improved appearance.
+- Added ability to save the canvas as an image on the device.
 
 ### 0.0.9 : Adaptive Game Engine 1.3.1 (19.03.2024)
 - Code optimized.
