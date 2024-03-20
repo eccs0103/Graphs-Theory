@@ -28,9 +28,7 @@ class Edge {
 	static parse(text) {
 		const match = /^(\d+)-(\d+)$/.exec(text);
 		if (match === null) throw new SyntaxError(`Unable to parse edge from '${(text)}'`);
-
 		const [, vertice1, vertice2] = match.map(part => Number(part));
-
 		return [min(vertice1, vertice2), max(vertice1, vertice2)];
 	}
 	/**
@@ -64,7 +62,6 @@ class Graph {
 	static parse(text) {
 		const match = /^vertices: (d+)\nconnections:?$/.exec(text); // TODO
 		if (match === null) throw new SyntaxError(`Unable to parse graph from '${(text)}'`);
-
 		// TODO
 		throw new ReferenceError(`Not implemented function`);
 	}
