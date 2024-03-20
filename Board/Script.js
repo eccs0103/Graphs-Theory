@@ -1,8 +1,7 @@
 "use strict";
 
-import { AXIS_FACTOR, CONSTANT_TWO_2D, Entity } from "../Scripts/Components/Entity.js";
-import { userInterface } from "../Scripts/Components/InterfaceItem.js";
-import { canvas, context, engine, progenitor } from "../Scripts/Components/Node.js";
+import { Entity } from "../Scripts/Components/Entity.js";
+import { PointerEvent, canvas, context, engine, progenitor } from "../Scripts/Components/Node.js";
 import { Renderer } from "../Scripts/Components/Utilities.js";
 import { Point2D } from "../Scripts/Modules/Measures.js";
 
@@ -60,6 +59,14 @@ class VerticeEntity extends Entity {
 			context.restore();
 		});
 	}
+	/**
+	 * @param {Readonly<Point2D>} point 
+	 * @returns {boolean}
+	 */
+	isMesh(point) {
+		const { x, y } = this.globalPosition;
+		return (hypot(point.x - x, point.y - y) <= this.diameter / 2);
+	}
 	get size() {
 		return super.size;
 	}
@@ -83,31 +90,20 @@ class EdgeEntity extends Entity {
 await window.load(Promise.fulfill(() => { }), 200, 1000);
 
 //#region Canvas
-/**
- * @param {MouseEvent} event 
- * @returns {Readonly<Point2D>}
- */
-function getMousePosition({ clientX: x, clientY: y }) {
-	const { x: xOffset, y: yOffset } = canvas.getBoundingClientRect();
-	const pointClientPosition = new Point2D(x, y);
-	const pointCanvasOffset = new Point2D(xOffset, yOffset);
-	return Object.freeze(pointClientPosition["-"](userInterface.size["/"](CONSTANT_TWO_2D))["*"](AXIS_FACTOR)["-"](pointCanvasOffset));
-}
-
-canvas.addEventListener(`pointerdown`, async (event) => {
+progenitor.addEventListener(`pointerdown`, async (event) => {
+	if (!(event instanceof PointerEvent)) return;
 	const controller = new AbortController();
-	if (event.button !== 0) return;
-	const pointPointerBeginPosition = getMousePosition(event);
-	const verticeAlreadyExist = VerticeEntity.getVerticeAt(pointPointerBeginPosition);
+	const pointBeginPosition = event.position;
+	const verticeAlreadyExist = VerticeEntity.getVerticeAt(pointBeginPosition);
 	await (/** @type {Promise<void>} */ (new Promise((resolve) => {
 		if (verticeAlreadyExist === null) {
 			//#region New instance
-			window.addEventListener(`pointerup`, (event2) => {
-				if (event2.button !== 0) return;
-				const pointPointerEndPosition = getMousePosition(event2);
-				if (VerticeEntity.getVerticeAt(pointPointerEndPosition) !== null) return;
+			progenitor.addEventListener(`pointerup`, (event2) => {
+				if (!(event2 instanceof PointerEvent)) return;
+				const pointEndPosition =  event2.position;
+				if (VerticeEntity.getVerticeAt(pointEndPosition) !== null) return;
 				const verticeNewInstance = new VerticeEntity(`Vertice`);
-				verticeNewInstance.globalPosition = pointPointerEndPosition;
+				verticeNewInstance.globalPosition = pointEndPosition;
 				progenitor.children.add(verticeNewInstance);
 				resolve();
 			}, { signal: controller.signal });
@@ -115,7 +111,8 @@ canvas.addEventListener(`pointerdown`, async (event) => {
 		} else {
 			//#region Already exist
 			const pointInitialPosition = verticeAlreadyExist.globalPosition;
-			window.addEventListener(`pointerup`, (event2) => {
+			progenitor.addEventListener(`pointerup`, (event2) => {
+				if (!(event2 instanceof PointerEvent)) return;
 				const pointCurrentPosition = verticeAlreadyExist.globalPosition;
 				if (hypot(pointInitialPosition.x - pointCurrentPosition.x, pointInitialPosition.y - pointCurrentPosition.y) < 1) {
 					progenitor.children.remove(verticeAlreadyExist);
@@ -124,9 +121,9 @@ canvas.addEventListener(`pointerdown`, async (event) => {
 				}
 				resolve();
 			}, { signal: controller.signal });
-			window.addEventListener(`pointermove`, (event2) => {
-				const pointPointerDragPosition = getMousePosition(event2);
-				verticeAlreadyExist.globalPosition = pointPointerDragPosition;
+			progenitor.addEventListener(`pointermove`, (event2) => {
+				if (!(event2 instanceof PointerEvent)) return;
+				verticeAlreadyExist.globalPosition = event2.position;
 			}, { signal: controller.signal });
 			//#endregion
 		}
