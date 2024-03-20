@@ -78,3 +78,15 @@ label[for="edge-tool"] {
 	inline-size: inherit;
 	block-size: inherit;
 }
+
+div.menu {
+	grid-area: board-area;
+	inline-size: -moz-fit-content;
+	inline-size: fit-content;
+	block-size: -moz-fit-content;
+	block-size: fit-content;
+	overflow: hidden;
+	position: absolute;
+	bottom: var(--size-gap);
+	right: var(--size-gap);
+}

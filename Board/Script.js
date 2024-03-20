@@ -2,12 +2,17 @@
 
 import { AXIS_FACTOR, CONSTANT_TWO_2D, Entity } from "../Scripts/Components/Entity.js";
 import { userInterface } from "../Scripts/Components/InterfaceItem.js";
-import { canvas, progenitor } from "../Scripts/Components/Node.js";
+import { canvas, context, engine, progenitor } from "../Scripts/Components/Node.js";
 import { Renderer } from "../Scripts/Components/Utilities.js";
 import { Point2D } from "../Scripts/Modules/Measures.js";
-import { } from "../Scripts/Structure.js";
 
-const { min, max, hypot } = Math;
+const { min, max, hypot, PI } = Math;
+
+//#region Definition
+const inputVerticeTool = document.getElement(HTMLInputElement, `input#vertice-tool`);
+const inputEdgeTool = document.getElement(HTMLInputElement, `input#edge-tool`);
+const buttonCaptureCanvas = document.getElement(HTMLButtonElement, `button#capture-canvas`);
+//#endregion
 
 //#region Vertice entity
 class VerticeEntity extends Entity {
@@ -43,7 +48,16 @@ class VerticeEntity extends Entity {
 		this.diameter = min(canvas.width, canvas.height) / 16;
 
 		this.addEventListener(`render`, (event) => {
-			Renderer.markArea(this);
+			context.save();
+			context.fillStyle = Renderer.colorHighlight.pass(0.1).toString(true);
+			context.strokeStyle = Renderer.colorHighlight.toString(true);
+			const { globalPosition: position, diameter } = this;
+			context.beginPath();
+			context.arc(position.x, position.y, diameter / 2, 0, 2 * PI);
+			context.closePath();
+			context.stroke();
+			context.fill();
+			context.restore();
 		});
 	}
 	get size() {
@@ -68,6 +82,7 @@ class EdgeEntity extends Entity {
 
 await window.load(Promise.fulfill(() => { }), 200, 1000);
 
+//#region Canvas
 /**
  * @param {MouseEvent} event 
  * @returns {Readonly<Point2D>}
@@ -104,7 +119,7 @@ canvas.addEventListener(`pointerdown`, async (event) => {
 				const pointCurrentPosition = verticeAlreadyExist.globalPosition;
 				if (hypot(pointInitialPosition.x - pointCurrentPosition.x, pointInitialPosition.y - pointCurrentPosition.y) < 1) {
 					progenitor.children.remove(verticeAlreadyExist);
-				} else if (VerticeEntity.getVerticeAt(verticeAlreadyExist.globalPosition, verticeAlreadyExist) !== null) {
+				} else if (VerticeEntity.getVerticeAt(pointCurrentPosition, verticeAlreadyExist) !== null) {
 					verticeAlreadyExist.globalPosition = pointInitialPosition;
 				}
 				resolve();
@@ -117,4 +132,16 @@ canvas.addEventListener(`pointerdown`, async (event) => {
 		}
 	})));
 	controller.abort();
+});
+//#endregion
+
+buttonCaptureCanvas.addEventListener(`click`, async (event) => {
+	try {
+		canvas.toBlob((blob) => {
+			if (blob === null) throw new ReferenceError(`Unable to initialize canvas for capture`);
+			navigator.download(new File([blob], `${Date.now()}.png`));
+		});
+	} catch (error) {
+		await window.stabilize(Error.generate(error));
+	}
 });
