@@ -26,7 +26,7 @@ class Edge {
 	 * @returns {[number, number]}
 	 */
 	static parse(text) {
-		const match = /^(\d+)-(\d+)$/.exec(text);
+		const match = /^(\d+)\s*-\s*(\d+)$/.exec(text);
 		if (match === null) throw new SyntaxError(`Unable to parse edge from '${(text)}'`);
 		const [, vertice1, vertice2] = match.map(part => Number(part));
 		return [min(vertice1, vertice2), max(vertice1, vertice2)];
@@ -60,10 +60,17 @@ class Graph {
 	 * @returns {Graph}
 	 */
 	static parse(text) {
-		const match = /^vertices: (d+)\nconnections:?$/.exec(text); // TODO
+		const match = /vertices: (\d+)\nconnections:\n\t-([\n\t-]?.*)$/s.exec(text);
 		if (match === null) throw new SyntaxError(`Unable to parse graph from '${(text)}'`);
-		// TODO
-		throw new ReferenceError(`Not implemented function`);
+		const graph = new Graph();
+		const [, $vertice_count, connections] = match;
+		const vertice_count = Number($vertice_count);
+		for (let i = 0; i < vertice_count; i++) {
+			graph.addVertice();
+		}
+		connections.split('\n\t-').map((x) => { graph.addEdge(...Edge.parse(x)); });
+
+		return graph;
 	}
 	/** @type {Vertice[]} */
 	#vertices = [];
