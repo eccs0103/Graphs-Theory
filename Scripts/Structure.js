@@ -17,8 +17,8 @@ import { } from "./Components/Utilities.js";
 const { min, max } = Math;
 
 //#region Vertice
-class Vertice { 
-	
+class Vertice {
+
 }
 //#endregion
 //#region Edge
