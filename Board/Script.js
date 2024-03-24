@@ -7,12 +7,6 @@ import { Point2D } from "../Scripts/Modules/Measures.js";
 
 const { min, max, hypot, PI } = Math;
 
-//#region Definition
-const inputVerticeTool = document.getElement(HTMLInputElement, `input#vertice-tool`);
-const inputEdgeTool = document.getElement(HTMLInputElement, `input#edge-tool`);
-const buttonCaptureCanvas = document.getElement(HTMLButtonElement, `button#capture-canvas`);
-//#endregion
-
 //#region Vertice entity
 class VerticeEntity extends Entity {
 	/** @type {Set<VerticeEntity>} */
@@ -25,9 +19,7 @@ class VerticeEntity extends Entity {
 	static getVerticeAt(position, exception = null) {
 		for (const instance of VerticeEntity.#instances) {
 			if (exception === instance) continue;
-			const { x: xOther, y: yOther } = instance.globalPosition;
-			const { x: xThis, y: yThis } = position;
-			if (hypot(xOther - xThis, yOther - yThis) <= instance.diameter / 2) return instance;
+			if (instance.isMesh(position)) return instance;
 		}
 		return null;
 	}
@@ -71,7 +63,7 @@ class VerticeEntity extends Entity {
 		return super.size;
 	}
 	set size(value) {
-		throw new TypeError(`Cannot set property position of #<Vertice> which has only a getter`);
+		throw new TypeError(`Cannot set property position of #<VerticeEntity> which has only a getter`);
 	}
 	get diameter() {
 		return max(super.size.x, super.size.y);
@@ -87,10 +79,18 @@ class EdgeEntity extends Entity {
 }
 //#endregion
 
+//#region Definition
+const inputVerticeTool = document.getElement(HTMLInputElement, `input#vertice-tool`);
+const inputEdgeTool = document.getElement(HTMLInputElement, `input#edge-tool`);
+const buttonCaptureCanvas = document.getElement(HTMLButtonElement, `button#capture-canvas`);
+//#endregion
+
 await window.load(Promise.fulfill(() => { }), 200, 1000);
 
 //#region Canvas
+//#region Vertice drawing
 progenitor.addEventListener(`pointerdown`, async (event) => {
+	if (!inputVerticeTool.checked) return;
 	if (!(event instanceof PointerEvent)) return;
 	const controller = new AbortController();
 	const pointBeginPosition = event.position;
@@ -100,7 +100,7 @@ progenitor.addEventListener(`pointerdown`, async (event) => {
 			//#region New instance
 			progenitor.addEventListener(`pointerup`, (event2) => {
 				if (!(event2 instanceof PointerEvent)) return;
-				const pointEndPosition =  event2.position;
+				const pointEndPosition = event2.position;
 				if (VerticeEntity.getVerticeAt(pointEndPosition) !== null) return;
 				const verticeNewInstance = new VerticeEntity(`Vertice`);
 				verticeNewInstance.globalPosition = pointEndPosition;
@@ -130,6 +130,13 @@ progenitor.addEventListener(`pointerdown`, async (event) => {
 	})));
 	controller.abort();
 });
+//#endregion
+//#region Edge drawing
+progenitor.addEventListener(`pointerdown`, async (event) => {
+	if (!inputEdgeTool.checked) return;
+
+});
+//#endregion
 //#endregion
 
 buttonCaptureCanvas.addEventListener(`click`, async (event) => {

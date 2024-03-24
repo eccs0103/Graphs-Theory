@@ -3,6 +3,9 @@
 ## Information
 
 ## Feed
+### 0.1.4 : Adaptive Game Engine 1.3.4 (24.03.2024)
+- Bugfixes.
+
 ### 0.1.2 : Adaptive Game Engine 1.3.4 (21.03.2024)
 - Fixed error with graph vertice movement.
 - Fixed error with theme switching.
