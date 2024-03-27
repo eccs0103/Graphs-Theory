@@ -3,7 +3,7 @@
 import { Group, Node, PointerEvent, progenitor } from "./Node.js";
 import { Point2D } from "../Modules/Measures.js";
 
-const { atan2, PI } = Math;
+const { atan2, hypot, PI } = Math;
 
 //#region Entity
 /**
@@ -34,6 +34,7 @@ Object.freeze(AreaSectors);
  * @property {Entity} entity
  * @property {number} idTimeout
  * @property {boolean} isMoved
+ * @property {Readonly<Point2D>} pointInitialPosition
  */
 
 /**
@@ -62,7 +63,7 @@ class Entity extends Node {
 				entity.dispatchEvent(new PointerEvent(`hold`, { position: event.position }));
 				atPointerData = null;
 			}, Entity.#holdInterval);
-			atPointerData = { entity: entity, idTimeout: idTimeout, isMoved: false };
+			atPointerData = { entity: entity, idTimeout: idTimeout, isMoved: false, pointInitialPosition: event.position };
 		});
 		progenitor.addEventListener(`pointerup`, (event) => {
 			if (atPointerData === null) return;
@@ -77,8 +78,9 @@ class Entity extends Node {
 		});
 		progenitor.addEventListener(`pointermove`, (event) => {
 			if (atPointerData === null) return;
-			const { entity, idTimeout, isMoved } = atPointerData;
+			const { entity, idTimeout, isMoved, pointInitialPosition } = atPointerData;
 			if (!isMoved) {
+				if (hypot(pointInitialPosition.x - event.position.x, pointInitialPosition.y - event.position.y) < 4) return;
 				clearTimeout(idTimeout);
 				entity.dispatchEvent(new PointerEvent(`dragbegin`, { position: event.position }));
 			}

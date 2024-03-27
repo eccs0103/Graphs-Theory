@@ -429,38 +429,38 @@ class Progenitor extends Node {
 		let isPointerDown = false;
 		/** @type {boolean} */
 		let wasPointerDown = false;
+		canvas.addEventListener(`touchstart`, (event) => {
+			this.#fixTouchPosition(event);
+			isPointerDown = true;
+		});
 		canvas.addEventListener(`mousedown`, (event) => {
 			if (event.button !== 0) return;
 			this.#fixMousePosition(event);
 			isPointerDown = true;
 		});
-		canvas.addEventListener(`touchstart`, (event) => {
-			this.#fixTouchPosition(event);
-			isPointerDown = true;
-		});
 
 		/** @type {boolean} */
 		let isPointerUp = false;
-		window.addEventListener(`mouseup`, (event) => {
-			if (event.button !== 0 || !wasPointerDown) return;
-			this.#fixMousePosition(event);
-			isPointerUp = true;
-		});
 		window.addEventListener(`touchend`, (event) => {
 			if (!wasPointerDown) return;
 			this.#fixTouchPosition(event);
 			isPointerUp = true;
 		});
+		window.addEventListener(`mouseup`, (event) => {
+			if (event.button !== 0 || !wasPointerDown) return;
+			this.#fixMousePosition(event);
+			isPointerUp = true;
+		});
 
 		/** @type {boolean} */
 		let isPointerMove = false;
+		window.addEventListener(`touchmove`, (event) => {
+			this.#fixTouchPosition(event);
+			isPointerMove = true;
+		});
 		window.addEventListener(`mousemove`, (event) => {
 			if (event.button !== 0) return;
 			this.#fixMousePosition(event);
-			isPointerMove = true;
-		});
-		window.addEventListener(`touchmove`, (event) => {
-			this.#fixTouchPosition(event);
 			isPointerMove = true;
 		});
 
@@ -511,9 +511,9 @@ class Progenitor extends Node {
 	 */
 	#fixMousePosition(event) {
 		const { clientX: x, clientY: y } = event;
-		const { x: xOffset, y: yOffset, width, height } = canvas.getBoundingClientRect();
 		const pointClientPosition = new Point2D(x, y);
-		const pointCanvasOffset = new Point2D(-xOffset - width / 2, yOffset - height / 2);
+		const { x: xOffset, y: yOffset, width, height } = canvas.getBoundingClientRect();
+		const pointCanvasOffset = new Point2D(-xOffset - width / 2, -yOffset - height / 2);
 		this.#pointPointerPosition = Object.freeze(pointClientPosition["+"](pointCanvasOffset)["*"](AXIS_FACTOR));
 	}
 	/**
@@ -524,9 +524,9 @@ class Progenitor extends Node {
 		const touch = event.touches.item(0);
 		if (touch === null) return;
 		const { clientX: x, clientY: y } = touch;
-		const { x: xOffset, y: yOffset, width, height } = canvas.getBoundingClientRect();
 		const pointClientPosition = new Point2D(x, y);
-		const pointCanvasOffset = new Point2D(-xOffset - width / 2, yOffset - height / 2);
+		const { x: xOffset, y: yOffset, width, height } = canvas.getBoundingClientRect();
+		const pointCanvasOffset = new Point2D(-xOffset - width / 2, -yOffset - height / 2);
 		this.#pointPointerPosition = Object.freeze(pointClientPosition["+"](pointCanvasOffset)["*"](AXIS_FACTOR));
 	}
 }
