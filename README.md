@@ -3,6 +3,9 @@
 ## Information
 
 ## Feed
+### 0.1.4 : Adaptive Game Engine 1.3.5 (27.03.2024)
+- Core updated.
+
 ### 0.1.4 : Adaptive Game Engine 1.3.4 (24.03.2024)
 - Add `test.json`.
 
