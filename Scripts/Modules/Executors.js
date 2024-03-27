@@ -43,6 +43,16 @@ class Engine extends EventTarget {
 }
 //#endregion
 //#region Fast engine
+/**
+ * @typedef VirtualFastEngineEventMap
+ * @property {Event} start
+ * @property {Event} update
+ * @property {Event} launch
+ * @property {Event} change
+ * 
+ * @typedef {EventListener & VirtualFastEngineEventMap} FastEngineEventMap
+ */
+
 class FastEngine extends Engine {
 	/**
 	 * Constructs a FastEngine instance.
@@ -80,6 +90,26 @@ class FastEngine extends Engine {
 		};
 		requestAnimationFrame(callback);
 		this.launched = launch;
+	}
+	/**
+	 * @template {keyof FastEngineEventMap} K
+	 * @param {K} type 
+	 * @param {(this: FastEngine, ev: FastEngineEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof FastEngineEventMap} K
+	 * @param {K} type 
+	 * @param {(this: FastEngine, ev: FastEngineEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		return super.addEventListener(type, listener, options);
 	}
 	/** @type {DOMHighResTimeStamp} */
 	#time = 0;
@@ -154,6 +184,16 @@ class FastEngine extends Engine {
 }
 //#endregion
 //#region Precise engine
+/**
+ * @typedef VirtualPreciseEngineEventMap
+ * @property {Event} start
+ * @property {Event} update
+ * @property {Event} launch
+ * @property {Event} change
+ * 
+ * @typedef {EventListener & VirtualPreciseEngineEventMap} PreciseEngineEventMap
+ */
+
 class PreciseEngine extends Engine {
 	/**
 	 * Constructs a PreciseEngine instance.
@@ -177,6 +217,26 @@ class PreciseEngine extends Engine {
 		};
 		setTimeout(callback, this.#delta);
 		this.launched = launch;
+	}
+	/**
+	 * @template {keyof PreciseEngineEventMap} K
+	 * @param {K} type 
+	 * @param {(this: PreciseEngine, ev: PreciseEngineEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof PreciseEngineEventMap} K
+	 * @param {K} type 
+	 * @param {(this: PreciseEngine, ev: PreciseEngineEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		return super.addEventListener(type, listener, options);
 	}
 	/** @type {boolean} */
 	#launched = false;

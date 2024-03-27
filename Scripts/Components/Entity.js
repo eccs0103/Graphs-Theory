@@ -1,11 +1,22 @@
 "use strict";
 
-import { Group, ModificationEvent, Node } from "./Node.js";
+import { Group, Node, PointerEvent, progenitor } from "./Node.js";
 import { Point2D } from "../Modules/Measures.js";
 
 const { atan2, PI } = Math;
 
 //#region Entity
+/**
+ * @typedef VirtualEntityEventMap
+ * @property {PointerEvent} click
+ * @property {PointerEvent} hold
+ * @property {PointerEvent} dragbegin
+ * @property {PointerEvent} drag
+ * @property {PointerEvent} dragend
+ * 
+ * @typedef {import("./Node.js").NodeEventMap & VirtualEntityEventMap} EntityEventMap
+ */
+
 /** 
  * Enumeration representing different sectors in the area.
  * @enum {number}
@@ -19,23 +30,106 @@ const AreaSectors = {
 Object.freeze(AreaSectors);
 
 /**
+ * @typedef PointerData
+ * @property {Entity} entity
+ * @property {number} idTimeout
+ * @property {boolean} isMoved
+ */
+
+/**
  * Represents a generic entity node with event capabilities.
  */
 class Entity extends Node {
+	/** @type {number} */
+	static #holdInterval = 300;
+	static get holdInterval() {
+		return this.#holdInterval;
+	}
+	static set holdInterval(value) {
+		if (Number.isFinite(value) && value > 0) {
+			this.#holdInterval = value;
+		} else throw new RangeError(`Hold ${value} interval is out of range (0 - +∞)`);
+	}
+	/** @type {Entity[]} */
+	static #instances = [];
+	static {
+		/** @type {PointerData?} */
+		let atPointerData = null;
+		progenitor.addEventListener(`pointerdown`, (event) => {
+			const entity = Entity.#instances.find(entity => entity.isMesh(event.position));
+			if (entity === undefined) return;
+			const idTimeout = setTimeout(() => {
+				entity.dispatchEvent(new PointerEvent(`hold`, { position: event.position }));
+				atPointerData = null;
+			}, Entity.#holdInterval);
+			atPointerData = { entity: entity, idTimeout: idTimeout, isMoved: false };
+		});
+		progenitor.addEventListener(`pointerup`, (event) => {
+			if (atPointerData === null) return;
+			const { entity, idTimeout, isMoved } = atPointerData;
+			if (isMoved) {
+				entity.dispatchEvent(new PointerEvent(`dragend`, { position: event.position }));
+			} else if (entity.isMesh(event.position)) {
+				entity.dispatchEvent(new PointerEvent(`click`, { position: event.position }));
+			}
+			clearTimeout(idTimeout);
+			atPointerData = null;
+		});
+		progenitor.addEventListener(`pointermove`, (event) => {
+			if (atPointerData === null) return;
+			const { entity, idTimeout, isMoved } = atPointerData;
+			if (!isMoved) {
+				clearTimeout(idTimeout);
+				entity.dispatchEvent(new PointerEvent(`dragbegin`, { position: event.position }));
+			}
+			entity.dispatchEvent(new PointerEvent(`drag`, { position: event.position }));
+			atPointerData.isMoved = true;
+		});
+	}
 	/**
 	 * Creates a new instance of the Entity class.
-	 * @param {string} name - The name of the entity.
+	 * @param {string} name The name of the entity.
 	 */
-	constructor(name = ``) {
+	constructor(name = `Entity`) {
 		super(name);
+
+		this.addEventListener(`connect`, (event) => {
+			Entity.#instances.unshift(this);
+		});
+		this.addEventListener(`disconnect`, (event) => {
+			const index = Entity.#instances.indexOf(this);
+			if (index < 0) return;
+			Entity.#instances.splice(index, 1);
+		});
+
 		this.addEventListener(`tryadoptchild`, (event) => {
-			if (event instanceof ModificationEvent) {
-				if (!(event.node instanceof Entity)) {
-					event.preventDefault();
-					throw new TypeError(`Entity's children also must be inherited from Entity`);
-				}
+			if (!(event.node instanceof Entity)) {
+				event.preventDefault();
+				throw new TypeError(`Entity's children also must be inherited from Entity`);
 			}
 		});
+	}
+	/**
+	 * @template {keyof EntityEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Entity, ev: EntityEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof EntityEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Entity, ev: EntityEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
 	}
 	/** @type {Group<Entity>} */
 	#children = new Group(this);
@@ -70,9 +164,8 @@ class Entity extends Node {
 			if (this.parent instanceof Entity) {
 				result = result["+"](this.parent.globalPosition);
 			}
-		} catch { } finally {
-			return Object.freeze(result);
-		}
+		} catch { }
+		return Object.freeze(result);
 	}
 	/**
 	 * Sets the global position of the entity.
@@ -83,19 +176,24 @@ class Entity extends Node {
 			if (this.parent instanceof Entity) {
 				value = result["-"](this.parent.globalPosition);
 			}
-		} catch { } finally {
-			this.#position = result;
-		}
+		} catch { }
+		this.#position = result;
 	}
 	/**
 	 * Checks if a point is within the mesh of the entity.
-	 * @abstract
-	 * @param {Readonly<Point2D>} point - The point to check.
-	 * @returns {boolean} - Whether the point is within the mesh.
-	 * @throws {ReferenceError} - If function not implemented.
+	 * @param {Readonly<Point2D>} point The point to check.
+	 * @returns {boolean} Whether the point is within the mesh.
+	 * @throws {ReferenceError} If function not implemented.
 	 */
 	isMesh(point) {
-		throw new ReferenceError(`Not implemented function`);
+		const position = this.globalPosition;
+		const size = this.size;
+		return (
+			position.x - size.x / 2 <= point.x &&
+			point.x < position.x + size.x / 2 &&
+			position.y - size.y / 2 <= point.y &&
+			point.y < position.y + size.y / 2
+		);
 	}
 	/** @type {Point2D} */
 	#size = Point2D.ZERO;
@@ -114,8 +212,8 @@ class Entity extends Node {
 	}
 	/**
 	 * Gets the sector of the area in which another entity is located.
-	 * @param {Entity} other - The other entity.
-	 * @returns {AreaSectors} - The sector of the area.
+	 * @param {Entity} other The other entity.
+	 * @returns {AreaSectors} The sector of the area.
 	 */
 	getAreaSector(other) {
 		const alpha = atan2(this.size.x / 2, this.size.y / 2);
@@ -130,7 +228,7 @@ class Entity extends Node {
 			const sector = sectors[index];
 			const end = begin + sector;
 			if (begin <= angle && angle < end) {
-				return index;
+				return (/** @type {AreaSectors} */ (index));
 			}
 			begin = end;
 		}

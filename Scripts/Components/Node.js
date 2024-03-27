@@ -5,11 +5,13 @@ import { } from "../Modules/Extensions.js";
 import { Point2D } from "../Modules/Measures.js";
 
 /**
- * Represents the canvas element.
+ * Represents the canvas element used for display.
+ * @type {HTMLCanvasElement}
  */
 const canvas = document.getElement(HTMLCanvasElement, `canvas#display`);
 /**
- * Represents the 2D rendering context of the canvas.
+ * Represents the rendering context for the canvas element.
+ * @type {CanvasRenderingContext2D}
  */
 const context = canvas.getContext(`2d`) ?? (() => {
 	throw new TypeError(`Context is missing`);
@@ -27,17 +29,19 @@ window.addEventListener(`resize`, (event) => {
 });
 
 /**
- * Represents a constant `Point2D(1, -1)` value.
+ * Represents a factor used to modify the y-axis behavior for canvas rendering.
+ * @type {Readonly<Point2D>}
  */
 const AXIS_FACTOR = Object.freeze(new Point2D(1, -1));
-
 /**
- * Represents a constant `Point2D(2, 2)` value.
+ * Represents a constant value for a 2D point.
+ * @type {Readonly<Point2D>}
  */
 const CONSTANT_TWO_2D = Object.freeze(Point2D.repeat(2));
 
 /**
- * Represents a FastEngine instance using the canvas context.
+ * Represents the game engine instance.
+ * @type {FastEngine}
  */
 const engine = new FastEngine();
 
@@ -85,8 +89,8 @@ class ModificationEvent extends Event {
 class Group {
 	/**
 	 * Creates a new instance of the Group class.
-	 * @param {Node} owner - The owner node of the group.
-	 * @param {T[]} items - The initial items to add to the group.
+	 * @param {Node} owner The owner node of the group.
+	 * @param {T[]} items The initial items to add to the group.
 	 */
 	constructor(owner, ...items) {
 		this.#owner = owner;
@@ -100,7 +104,8 @@ class Group {
 	#nodes = new Set();
 	/**
 	 * Adds an item to the group.
-	 * @param {T} item - The item to add.
+	 * @param {T} item The item to add.
+	 * @returns {void}
 	 */
 	add(item) {
 		const parent = this.#owner, child = item;
@@ -112,7 +117,8 @@ class Group {
 	}
 	/**
 	 * Removes an item from the group.
-	 * @param {T} item - The item to remove.
+	 * @param {T} item The item to remove.
+	 * @returns {void}
 	 */
 	remove(item) {
 		const parent = this.#owner, child = item;
@@ -124,14 +130,15 @@ class Group {
 	}
 	/**
 	 * Checks if the group contains a specific item.
-	 * @param {T} item - The item to check for.
-	 * @returns {boolean} - True if the group contains the item, false otherwise.
+	 * @param {T} item The item to check for.
+	 * @returns {boolean} True if the group contains the item, false otherwise.
 	 */
 	has(item) {
 		return this.#nodes.has(item);
 	}
 	/**
 	 * Removes all items from the group.
+	 * @returns {void}
 	 */
 	clear() {
 		for (const item of this.#nodes) {
@@ -147,7 +154,7 @@ class Group {
 	}
 	/**
 	 * Returns an iterator for the items in the group.
-	 * @returns {Generator<T>} - The iterator for the items.
+	 * @returns {Generator<T>} The iterator for the items.
 	 */
 	*[Symbol.iterator]() {
 		for (const item of this.#nodes) {
@@ -159,11 +166,29 @@ class Group {
 //#endregion
 //#region Node
 /**
+ * @typedef NodeEventMap
+ * @property {ModificationEvent} tryadopt
+ * @property {ModificationEvent} adopt
+ * @property {ModificationEvent} tryabandon
+ * @property {ModificationEvent} abandon
+ * @property {ModificationEvent} tryadoptchild
+ * @property {ModificationEvent} adoptchild
+ * @property {ModificationEvent} tryabandonchild
+ * @property {ModificationEvent} abandonchild
+ * @property {Event} connect
+ * @property {Event} disconnect
+ * @property {Event} start
+ * @property {Event} update
+ * @property {Event} render
+ */
+
+/**
  * Represents a generic node with event capabilities.
  */
 class Node extends EventTarget {
 	/**
 	 * @param {Node} target 
+	 * @returns {void}
 	 */
 	static #connect(target) {
 		target.#isConnected = true;
@@ -174,6 +199,7 @@ class Node extends EventTarget {
 	}
 	/**
 	 * @param {Node} target 
+	 * @returns {void}
 	 */
 	static #disconnect(target) {
 		target.#isConnected = false;
@@ -183,39 +209,65 @@ class Node extends EventTarget {
 		target.dispatchEvent(new Event(`disconnect`));
 	}
 	/**
-	 * @param {Node} target 
-	 */
-	static #isProgenitor(target) {
-		return Reflect.getPrototypeOf(target) === Progenitor.prototype;
-	}
-	/**
 	 * Creates a new instance of the Node class.
-	 * @param {string} name - The name of the node.
+	 * @param {string} name The name of the node.
 	 */
-	constructor(name = ``) {
+	constructor(name = `Node`) {
 		super();
 		this.name = name;
 
 		this.addEventListener(`adoptchild`, (event) => {
-			if (event instanceof ModificationEvent) {
-				event.node.#parent = this;
-			}
+			event.node.#parent = this;
 		});
 		this.addEventListener(`abandonchild`, (event) => {
-			if (event instanceof ModificationEvent) {
-				event.node.#parent = null;
-			}
+			event.node.#parent = null;
 		});
 
 		this.addEventListener(`adopt`, (event) => {
 			const peak = this.peak;
-			if (Node.#isProgenitor(peak) || peak.#isConnected) {
+			if (peak instanceof Progenitor || peak.#isConnected) {
 				Node.#connect(this);
 			}
 		});
 		this.addEventListener(`abandon`, (event) => {
 			Node.#disconnect(this);
 		});
+	}
+	/**
+	 * @template {keyof NodeEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Node, ev: NodeEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof NodeEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Node, ev: NodeEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * Dispatches an event to the Progenitor and its descendants.
+	 * @param {Event} event The event to dispatch.
+	 * @returns {boolean} True if the event was not canceled, false otherwise.
+	 */
+	dispatchEvent(event) {
+		if (!super.dispatchEvent(event)) return false;
+		if (event.bubbles) {
+			for (const child of this.children) {
+				if (!child.dispatchEvent(event)) return false;
+			}
+		}
+		return true;
 	}
 	/** @type {string} */
 	#name = ``;
@@ -236,7 +288,7 @@ class Node extends EventTarget {
 	/**
 	 * Gets the parent node.
 	 * @readonly
-	 * @throws {ReferenceError} - If the parent is null.
+	 * @throws {ReferenceError} If the parent is null.
 	 */
 	get parent() {
 		return this.#parent ?? (() => {
@@ -266,7 +318,7 @@ class Node extends EventTarget {
 		}
 	}
 	/** @type {boolean} */
-	#isConnected = Node.#isProgenitor(this);
+	#isConnected = (this instanceof Progenitor);
 	/**
 	 * Gets whether the node is connected.
 	 * @readonly
@@ -324,6 +376,15 @@ class PointerEvent extends Event {
 //#endregion
 //#region Progenitor
 /**
+ * @typedef VirtualProgenitorEventMap
+ * @property {PointerEvent} pointerdown
+ * @property {PointerEvent} pointerup
+ * @property {PointerEvent} pointermove
+ * 
+ * @typedef {NodeEventMap & VirtualProgenitorEventMap} ProgenitorEventMap
+ */
+
+/**
  * Represents a special node called Progenitor with specific behaviors.
  */
 class Progenitor extends Node {
@@ -341,24 +402,12 @@ class Progenitor extends Node {
 			return Progenitor.#instance;
 		})();
 	}
-	static #regexMobilePattern = /Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Silk/i;
-	static #regexTabletPattern = /(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i;
-
-	/**
-	 * @returns {DeviceTypes}
-	 */
-	static #getDeviceType() {
-		const agent = navigator.userAgent;
-		return this.#regexMobilePattern.test(agent) ? DeviceTypes.mobile
-			: this.#regexTabletPattern.test(agent) ? DeviceTypes.tablet
-				: DeviceTypes.desktop;
-	}
 	/** @type {boolean} */
 	static #locked = true;
 	/**
 	 * Creates a new instance of the Progenitor class.
-	 * @param {string} name - The name of the Progenitor node.
-	 * @throws {TypeError} - If the constructor is called manually.
+	 * @param {string} name The name of the Progenitor node.
+	 * @throws {TypeError} If the constructor is called manually.
 	 */
 	constructor(name = `Progenitor`) {
 		super(name);
@@ -370,53 +419,90 @@ class Progenitor extends Node {
 		});
 
 		engine.addEventListener(`start`, (event) => {
-			this.dispatchEvent(new Event(event.type, { bubbles: true }));
+			this.dispatchEvent(new Event(`start`, { bubbles: true }));
 		});
 		engine.addEventListener(`update`, (event) => {
-			this.dispatchEvent(new Event(event.type, { bubbles: true }));
+			this.dispatchEvent(new Event(`update`, { bubbles: true }));
 		});
 
-		window.addEventListener(`resize`, (event) => {
-			this.#deviceType = Progenitor.#getDeviceType();
-		});
-
+		/** @type {boolean} */
+		let isPointerDown = false;
+		/** @type {boolean} */
+		let wasPointerDown = false;
 		canvas.addEventListener(`mousedown`, (event) => {
 			if (event.button !== 0) return;
-			if (this.#deviceType !== DeviceTypes.desktop) return;
 			this.#fixMousePosition(event);
-			this.dispatchEvent(new PointerEvent(`pointerdown`, { position: this.#pointPointerPosition }));
+			isPointerDown = true;
 		});
-		window.addEventListener(`mouseup`, (event) => {
-			if (event.button !== 0) return;
-			if (this.#deviceType !== DeviceTypes.desktop) return;
-			this.#fixMousePosition(event);
-			this.dispatchEvent(new PointerEvent(`pointerup`, { position: this.#pointPointerPosition }));
-		});
-		window.addEventListener(`mousemove`, (event) => {
-			if (event.button !== 0) return;
-			if (this.#deviceType !== DeviceTypes.desktop) return;
-			this.#fixMousePosition(event);
-			this.dispatchEvent(new PointerEvent(`pointermove`, { position: this.#pointPointerPosition }));
+		canvas.addEventListener(`touchstart`, (event) => {
+			this.#fixTouchPosition(event);
+			isPointerDown = true;
 		});
 
-		canvas.addEventListener(`touchstart`, (event) => {
-			if (this.#deviceType !== DeviceTypes.mobile && this.#deviceType !== DeviceTypes.tablet) return;
-			this.#fixTouchPosition(event);
-			this.dispatchEvent(new PointerEvent(`pointerdown`, { position: this.#pointPointerPosition }));
+		/** @type {boolean} */
+		let isPointerUp = false;
+		window.addEventListener(`mouseup`, (event) => {
+			if (event.button !== 0 || !wasPointerDown) return;
+			this.#fixMousePosition(event);
+			isPointerUp = true;
 		});
 		window.addEventListener(`touchend`, (event) => {
-			if (this.#deviceType !== DeviceTypes.mobile && this.#deviceType !== DeviceTypes.tablet) return;
+			if (!wasPointerDown) return;
 			this.#fixTouchPosition(event);
-			this.dispatchEvent(new PointerEvent(`pointerup`, { position: this.#pointPointerPosition }));
+			isPointerUp = true;
+		});
+
+		/** @type {boolean} */
+		let isPointerMove = false;
+		window.addEventListener(`mousemove`, (event) => {
+			if (event.button !== 0) return;
+			this.#fixMousePosition(event);
+			isPointerMove = true;
 		});
 		window.addEventListener(`touchmove`, (event) => {
-			if (this.#deviceType !== DeviceTypes.mobile && this.#deviceType !== DeviceTypes.tablet) return;
 			this.#fixTouchPosition(event);
-			this.dispatchEvent(new PointerEvent(`pointermove`, { position: this.#pointPointerPosition }));
+			isPointerMove = true;
+		});
+
+		this.addEventListener(`update`, (event) => {
+			if (isPointerDown) {
+				this.dispatchEvent(new PointerEvent(`pointerdown`, { position: this.#pointPointerPosition }));
+				wasPointerDown = true;
+				isPointerDown = false;
+			}
+			if (isPointerUp) {
+				this.dispatchEvent(new PointerEvent(`pointerup`, { position: this.#pointPointerPosition }));
+				wasPointerDown = false;
+				isPointerUp = false;
+			}
+			if (isPointerMove) {
+				this.dispatchEvent(new PointerEvent(`pointermove`, { position: this.#pointPointerPosition }));
+				isPointerMove = false;
+			}
 		});
 	}
-	/** @type {DeviceTypes} */
-	#deviceType = Progenitor.#getDeviceType();
+	/**
+	 * @template {keyof ProgenitorEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Progenitor, ev: ProgenitorEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof ProgenitorEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Progenitor, ev: ProgenitorEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
 	/** @type {Readonly<Point2D>} */
 	#pointPointerPosition = Object.freeze(Point2D.repeat(NaN));
 	/**
@@ -443,36 +529,12 @@ class Progenitor extends Node {
 		const pointCanvasOffset = new Point2D(-xOffset - width / 2, yOffset - height / 2);
 		this.#pointPointerPosition = Object.freeze(pointClientPosition["+"](pointCanvasOffset)["*"](AXIS_FACTOR));
 	}
-	/**
-	 * Dispatches an event to the Progenitor and its descendants.
-	 * @param {Event} event - The event to dispatch.
-	 * @returns {boolean} - True if the event was not canceled, false otherwise.
-	 */
-	dispatchEvent(event) {
-		/** @type {Node[]} */
-		const stack = [this];
-		while (stack.length > 0) {
-			let node = stack.pop() ?? (() => {
-				throw new EvalError(`Invalid stack evalution`);
-			})();
-			if (node === this) {
-				if (!super.dispatchEvent(event)) return false;
-			} else {
-				if (!node.dispatchEvent(event)) return false;
-			}
-			if (event.bubbles) {
-				for (const child of node.children) {
-					stack.push(child);
-				}
-			}
-		}
-		return true;
-	}
 }
 //#endregion
 
 /**
  * Represents the singleton instance of the Progenitor class.
+ * @type {Progenitor}
  */
 const progenitor = Progenitor.instance;
 

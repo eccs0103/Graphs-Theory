@@ -6,12 +6,17 @@ import { Node, canvas, context, progenitor } from "./Node.js";
 
 //#region Animator
 /**
+ * @typedef AnimatorEventMap
+ * @property {Event} update
+ */
+
+/**
  * Animate events over a specified duration.
  */
 class Animator extends EventTarget {
 	/**
 	 * Creates a new instance of the Animator class.
-	 * @param {number} duration - The duration of the animation.
+	 * @param {number} duration The duration of the animation.
 	 */
 	constructor(duration) {
 		super();
@@ -26,6 +31,28 @@ class Animator extends EventTarget {
 				frameController.abort();
 			}
 		}, { signal: frameController.signal });
+	}
+	/**
+	 * @template {keyof AnimatorEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Animator, ev: AnimatorEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof AnimatorEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Animator, ev: AnimatorEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
 	}
 	/** @type {number} */
 	#duration;
@@ -54,8 +81,9 @@ class Animator extends EventTarget {
 class Walker {
 	/**
 	 * Traverse the tree downward and apply an action to each node.
-	 * @param {Node} node - The root node.
-	 * @param {(node: Node) => any} action - The action to be applied to each node.
+	 * @param {Node} node The root node.
+	 * @param {(node: Node) => any} action The action to be applied to each node.
+	 * @returns {void}
 	 */
 	static downTraverse(node, action) {
 		action(node);
@@ -65,8 +93,9 @@ class Walker {
 	}
 	/**
 	 * Traverse the tree upward and apply an action to each node.
-	 * @param {Node} node - The leaf node.
-	 * @param {(node: Node) => any} action - The action to be applied to each node.
+	 * @param {Node} node The leaf node.
+	 * @param {(node: Node) => any} action The action to be applied to each node.
+	 * @returns {void}
 	 */
 	static upTraverse(node, action) {
 		action(node);
@@ -77,10 +106,10 @@ class Walker {
 	/**
 	 * Reduce the tree downward by applying an action to each node.
 	 * @template T
-	 * @param {Node} root - The root node.
-	 * @param {(previous: T, current: Node) => T} action - The action to reduce each node.
-	 * @param {T} initial - The initial value for reduction.
-	 * @returns {T} - The reduced result.
+	 * @param {Node} root The root node.
+	 * @param {(previous: T, current: Node) => T} action The action to reduce each node.
+	 * @param {T} initial The initial value for reduction.
+	 * @returns {T} The reduced result.
 	 */
 	static downReduce(root, action, initial) {
 		let result = initial;
@@ -92,10 +121,10 @@ class Walker {
 	/**
 	 * Reduce the tree upward by applying an action to each node.
 	 * @template T
-	 * @param {Node} root - The leaf node.
-	 * @param {(previous: T, current: Node) => T} action - The action to reduce each node.
-	 * @param {T} initial - The initial value for reduction.
-	 * @returns {T} - The reduced result.
+	 * @param {Node} root The leaf node.
+	 * @param {(previous: T, current: Node) => T} action The action to reduce each node.
+	 * @param {T} initial The initial value for reduction.
+	 * @returns {T} The reduced result.
 	 */
 	static upReduce(root, action, initial) {
 		let result = initial;
@@ -106,7 +135,7 @@ class Walker {
 	}
 	/**
 	 * Creates a new instance of the Walker class.
-	 * @param {Node} root - The root node for traversal.
+	 * @param {Node} root The root node for traversal.
 	 */
 	constructor(root) {
 		this.#root = root;
@@ -115,14 +144,16 @@ class Walker {
 	#root;
 	/**
 	 * Traverse the tree downward and apply an action to each node.
-	 * @param {(node: Node) => any} action - The action to be applied to each node.
+	 * @param {(node: Node) => any} action The action to be applied to each node.
+	 * @returns {void}
 	 */
 	downTraverse(action) {
 		Walker.downTraverse(this.#root, action);
 	}
 	/**
 	 * Traverse the tree upward and apply an action to each node.
-	 * @param {(node: Node) => any} action - The action to be applied to each node.
+	 * @param {(node: Node) => any} action The action to be applied to each node.
+	 * @returns {void}
 	 */
 	upTraverse(action) {
 		Walker.upTraverse(this.#root, action);
@@ -130,9 +161,9 @@ class Walker {
 	/**
 	 * Reduce the tree downward by applying an action to each node.
 	 * @template T
-	 * @param {(previous: T, current: Node) => T} action - The action to reduce each node.
-	 * @param {T} initial - The initial value for reduction.
-	 * @returns {T} - The reduced result.
+	 * @param {(previous: T, current: Node) => T} action The action to reduce each node.
+	 * @param {T} initial The initial value for reduction.
+	 * @returns {T} The reduced result.
 	 */
 	downReduce(action, initial) {
 		return Walker.downReduce(this.#root, action, initial);
@@ -140,9 +171,9 @@ class Walker {
 	/**
 	 * Reduce the tree upward by applying an action to each node.
 	 * @template T
-	 * @param {(previous: T, current: Node) => T} action - The action to reduce each node.
-	 * @param {T} initial - The initial value for reduction.
-	 * @returns {T} - The reduced result.
+	 * @param {(previous: T, current: Node) => T} action The action to reduce each node.
+	 * @param {T} initial The initial value for reduction.
+	 * @returns {T} The reduced result.
 	 */
 	upReduce(action, initial) {
 		return Walker.upReduce(this.#root, action, initial);
@@ -170,7 +201,8 @@ class Renderer {
 	}
 	/**
 	 * Mark the area of an entity with a highlight.
-	 * @param {Entity} entity - The entity to highlight.
+	 * @param {Entity} entity The entity to highlight.
+	 * @returns {void}
 	 */
 	static markArea(entity) {
 		context.save();
@@ -189,6 +221,7 @@ class Renderer {
 	}
 	/**
 	 * Clear the rendering canvas.
+	 * @returns {void}
 	 */
 	static clear() {
 		const { e: x, f: y } = context.getTransform();

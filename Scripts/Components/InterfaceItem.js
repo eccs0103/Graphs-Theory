@@ -2,19 +2,47 @@
 
 import { Point2D } from "../Modules/Measures.js";
 import { Entity } from "./Entity.js";
-import { CONSTANT_TWO_2D, ModificationEvent, canvas, engine, progenitor } from "./Node.js";
+import { CONSTANT_TWO_2D, canvas, progenitor } from "./Node.js";
 
 //#region Interface item
+/**
+ * @typedef {{}} VirtualInterfaceItemEventMap
+ * 
+ * @typedef {import("./Entity.js").EntityEventMap & VirtualInterfaceItemEventMap} InterfaceItemEventMap
+ */
+
 /**
  * Represents an item in the interface.
  */
 class InterfaceItem extends Entity {
 	/**
 	 * Creates a new instance of the InterfaceItem class.
-	 * @param {string} name - The name of the interface item.
+	 * @param {string} name The name of the interface item.
 	 */
-	constructor(name = ``) {
+	constructor(name = `Interface item`) {
 		super(name);
+	}
+	/**
+	 * @template {keyof InterfaceItemEventMap} K
+	 * @param {K} type 
+	 * @param {(this: InterfaceItem, ev: InterfaceItemEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof InterfaceItemEventMap} K
+	 * @param {K} type 
+	 * @param {(this: InterfaceItem, ev: InterfaceItemEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
 	}
 	/** @type {Point2D} */
 	#anchor = Point2D.ZERO;
@@ -26,7 +54,7 @@ class InterfaceItem extends Entity {
 	}
 	/**
 	 * Sets the anchor point of the interface item.
-	 * @throws {RangeError} - If the anchor point is out of range.
+	 * @throws {RangeError} If the anchor point is out of range.
 	 */
 	set anchor(value) {
 		if (-1 > this.#anchor.x || this.#anchor.x > 1) throw new RangeError(`Anchor ${this.anchor} is out of range [(-1, -1) - (1, 1)]`);
@@ -66,12 +94,18 @@ class InterfaceItem extends Entity {
 //#endregion
 //#region User interface
 /**
+ * @typedef {{}} VirtualUserInterfaceEventMap
+ * 
+ * @typedef {InterfaceItemEventMap & VirtualUserInterfaceEventMap} UserInterfaceEventMap
+ */
+
+/**
  * Represents a user interface with specific properties.
  */
 class UserInterface extends InterfaceItem {
 	/**
 	 * Creates a new instance of the UserInterface class.
-	 * @param {string} name - The name of the user interface.
+	 * @param {string} name The name of the user interface.
 	 */
 	constructor(name = `User interface`) {
 		super(name);
@@ -80,13 +114,33 @@ class UserInterface extends InterfaceItem {
 			super.size = new Point2D(canvas.width, canvas.height);
 		});
 		this.addEventListener(`tryadopt`, (event) => {
-			if (event instanceof ModificationEvent) {
-				if (event.node !== progenitor) {
-					event.preventDefault();
-					throw new EvalError(`User interface can be adopted only by Progenitor`);
-				}
+			if (event.node !== progenitor) {
+				event.preventDefault();
+				throw new EvalError(`User interface can be adopted only by Progenitor`);
 			}
 		});
+	}
+	/**
+	 * @template {keyof UserInterfaceEventMap} K
+	 * @param {K} type 
+	 * @param {(this: UserInterface, ev: UserInterfaceEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof UserInterfaceEventMap} K
+	 * @param {K} type 
+	 * @param {(this: UserInterface, ev: UserInterfaceEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
 	}
 	/**
 	 * Gets the position of the user interface.
@@ -97,7 +151,7 @@ class UserInterface extends InterfaceItem {
 	}
 	/**
 	 * Setting the position of the user interface is not allowed.
-	 * @throws {TypeError} - On try to set the position.
+	 * @throws {TypeError} On try to set the position.
 	 */
 	set position(value) {
 		throw new TypeError(`Cannot set property position of #<UserInterface> which has only a getter`);
@@ -111,7 +165,7 @@ class UserInterface extends InterfaceItem {
 	}
 	/**
 	 * Setting the global position of the user interface is not allowed.
-	 * @throws {TypeError} - On try to set the global position.
+	 * @throws {TypeError} On try to set the global position.
 	 */
 	set globalPosition(value) {
 		throw new TypeError(`Cannot set property globalPosition of #<UserInterface> which has only a getter`);
@@ -125,7 +179,7 @@ class UserInterface extends InterfaceItem {
 	}
 	/**
 	 * Setting the size of the user interface is not allowed.
-	 * @throws {TypeError} - On try to set the size.
+	 * @throws {TypeError} On try to set the size.
 	 */
 	set size(value) {
 		throw new TypeError(`Cannot set property globalPosition of #<UserInterface> which has only a getter`);
@@ -139,7 +193,7 @@ class UserInterface extends InterfaceItem {
 	}
 	/**
 	 * Setting the anchor of the user interface is not allowed.
-	 * @throws {TypeError} - On try to set the anchor.
+	 * @throws {TypeError} On try to set the anchor.
 	 */
 	set anchor(value) {
 		throw new TypeError(`Cannot set property globalPosition of #<UserInterface> which has only a getter`);

@@ -4,9 +4,6 @@ import { Point2D } from "../Modules/Measures.js";
 import { progenitor, engine, CONSTANT_TWO_2D } from "./Node.js";
 import { Entity } from "./Entity.js";
 
-/** @type {Corporeal[]} */
-const corporeals = [];
-
 const { min, max } = Math;
 
 //#region Collision event
@@ -23,8 +20,8 @@ const { min, max } = Math;
 class CollisionEvent extends Event {
 	/**
 	 * Creates a new instance of the CollisionEvent class.
-	 * @param {string} type - The type of the event.
-	 * @param {CollisionEventInit} dict - The initialization dictionary.
+	 * @param {string} type The type of the event.
+	 * @param {CollisionEventInit} dict The initialization dictionary.
 	 */
 	constructor(type, dict) {
 		super(type, dict);
@@ -35,7 +32,7 @@ class CollisionEvent extends Event {
 	/** 
 	 * Gets the other corporeal entity involved in the collision.
 	 * @readonly
-	 * @throws {ReferenceError} - If the property is missing.
+	 * @throws {ReferenceError} If the property is missing.
 	 * @returns {Corporeal}
 	 */
 	get other() {
@@ -47,15 +44,26 @@ class CollisionEvent extends Event {
 //#endregion
 //#region Corporeal
 /**
+ * @typedef VirtualCorporealEventMap
+ * @property {CollisionEvent} areacollisionbegin
+ * @property {CollisionEvent} areacollision
+ * @property {CollisionEvent} areacollisionend
+ * 
+ * @typedef {import("./Entity.js").EntityEventMap & VirtualCorporealEventMap} CorporealEventMap
+ */
+
+/**
  * Represents a corporeal entity with collision and physics capabilities.
  */
 class Corporeal extends Entity {
+	/** @type {Corporeal[]} */
+	static #instances = [];
 	static {
 		progenitor.addEventListener(`update`, (event) => {
-			for (let index = 0; index < corporeals.length; index++) {
-				const target = corporeals[index];
-				for (let index2 = index + 1; index2 < corporeals.length; index2++) {
-					const other = corporeals[index2];
+			for (let index = 0; index < Corporeal.#instances.length; index++) {
+				const target = Corporeal.#instances[index];
+				for (let index2 = index + 1; index2 < Corporeal.#instances.length; index2++) {
+					const other = Corporeal.#instances[index2];
 
 					const isAreaCollisionBefore = target.#collisions.has(other);
 					const isAreaCollisionNow = Corporeal.isAreaCollide(target, other);
@@ -89,9 +97,9 @@ class Corporeal extends Entity {
 	}
 	/**
 	 * Checks if two corporeal entities' areas collide.
-	 * @param {Corporeal} first - The first corporeal entity.
-	 * @param {Corporeal} second - The second corporeal entity.
-	 * @returns {boolean} - Whether the areas collide.
+	 * @param {Corporeal} first The first corporeal entity.
+	 * @param {Corporeal} second The second corporeal entity.
+	 * @returns {boolean} Whether the areas collide.
 	 */
 	static isAreaCollide(first, second) {
 		const [begin1, end1] = Corporeal.#getArea(first);
@@ -100,9 +108,9 @@ class Corporeal extends Entity {
 	}
 	/**
 	 * Gets the collision points between two corporeal entities.
-	 * @param {Corporeal} first - The first corporeal entity.
-	 * @param {Corporeal} second - The second corporeal entity.
-	 * @returns {Point2D[]} - The collision points.
+	 * @param {Corporeal} first The first corporeal entity.
+	 * @param {Corporeal} second The second corporeal entity.
+	 * @returns {Point2D[]} The collision points.
 	 */
 	static getCollision(first, second) {
 		const [begin1, end1] = Corporeal.#getArea(first);
@@ -123,26 +131,46 @@ class Corporeal extends Entity {
 	}
 	/**
 	 * Creates a new instance of the Corporeal class.
-	 * @param {string} name - The name of the corporeal entity.
+	 * @param {string} name The name of the corporeal entity.
 	 */
-	constructor(name = ``) {
+	constructor(name = `Corporeal`) {
 		super(name);
 
 		this.addEventListener(`connect`, (event) => {
-			corporeals.push(this);
+			Corporeal.#instances.push(this);
 		});
-
 		this.addEventListener(`disconnect`, (event) => {
-			const index = corporeals.indexOf(this);
-			if (index > 0) {
-				corporeals.splice(index, 1);
-			}
+			const index = Corporeal.#instances.indexOf(this);
+			if (index < 0) return;
+			Corporeal.#instances.splice(index, 1);
 		});
 
 		this.addEventListener(`update`, (event) => {
 			this.velocity = this.velocity["+"](this.acceleration);
 			this.position = this.position["+"](this.#velocity["*"](Point2D.repeat(engine.delta)));
 		});
+	}
+	/**
+	 * @template {keyof CorporealEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Corporeal, ev: CorporealEventMap[K]) => any} listener 
+	 * @param {boolean | AddEventListenerOptions} options
+	 * @returns {void}
+	 */
+	addEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
+	}
+	/**
+	 * @template {keyof CorporealEventMap} K
+	 * @param {K} type 
+	 * @param {(this: Corporeal, ev: CorporealEventMap[K]) => any} listener 
+	 * @param {boolean | EventListenerOptions} options
+	 * @returns {void}
+	 */
+	removeEventListener(type, listener, options = false) {
+		// @ts-ignore
+		return super.addEventListener(type, listener, options);
 	}
 	/** @type {Set<Corporeal>} */
 	#collisions = new Set();
