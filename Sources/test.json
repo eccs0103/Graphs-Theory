@@ -1,5 +1,5 @@
 {
-	"verticles": 15,
+	"vertices": 15,
 	"connections": [
 		{ "from": 1, "to": 2 },
 		{ "from": 4, "to": 6 },

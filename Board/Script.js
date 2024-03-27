@@ -1,44 +1,73 @@
 "use strict";
 
 import { Entity } from "../Scripts/Components/Entity.js";
-import { PointerEvent, canvas, context, engine, progenitor } from "../Scripts/Components/Node.js";
+import { userInterface } from "../Scripts/Components/InterfaceItem.js";
+import { canvas, context } from "../Scripts/Components/Node.js";
 import { Renderer } from "../Scripts/Components/Utilities.js";
 import { Point2D } from "../Scripts/Modules/Measures.js";
 
-const { min, max, hypot, PI } = Math;
+const { min, hypot, PI } = Math;
 
 //#region Vertice entity
 class VerticeEntity extends Entity {
 	/** @type {Set<VerticeEntity>} */
 	static #instances = new Set();
 	/**
-	 * @param {Readonly<Point2D>} position 
+	 * @param {Readonly<Point2D>} point 
 	 * @param {VerticeEntity?} exception
-	 * @returns {VerticeEntity?}
+	 * @returns {boolean}
 	 */
-	static getVerticeAt(position, exception = null) {
-		for (const instance of VerticeEntity.#instances) {
-			if (exception === instance) continue;
-			if (instance.isMesh(position)) return instance;
+	static canPlaceAt(point, exception = null) {
+		for (const entityVertice of VerticeEntity.#instances) {
+			if (entityVertice === exception) continue;
+			const { x, y } = entityVertice.globalPosition;
+			if (hypot(point.x - x, point.y - y) < VerticeEntity.diameter) return false;
 		}
-		return null;
+		return true;
+	}
+	/** @type {number} */
+	static #diameter = min(canvas.width, canvas.height) / 16;
+	static get diameter() {
+		return this.#diameter;
+	}
+	static set diameter(value) {
+		this.#diameter = value;
+	}
+	static {
+		window.addEventListener(`resize`, () => {
+			this.diameter = min(canvas.width, canvas.height) / 16;
+		});
 	}
 	/**
 	 * @param {string} name 
 	 */
-	constructor(name = ``) {
+	constructor(name = `Vertice entity`) {
 		super(name);
 
-		this.addEventListener(`connect`, (event) => {
+		this.addEventListener(`connect`, () => {
 			VerticeEntity.#instances.add(this);
 		});
-		this.addEventListener(`disconnect`, (event) => {
+		this.addEventListener(`disconnect`, () => {
 			VerticeEntity.#instances.delete(this);
 		});
 
-		this.diameter = min(canvas.width, canvas.height) / 16;
+		this.addEventListener(`click`, () => {
+			userInterface.children.remove(this);
+		});
+		/** @type {Readonly<Point2D>} */
+		let pointInitialPosition;
+		this.addEventListener(`dragbegin`, (event) => {
+			pointInitialPosition = event.position;
+		});
+		this.addEventListener(`drag`, (event) => {
+			this.globalPosition = event.position;
+		});
+		this.addEventListener(`dragend`, (event) => {
+			if (VerticeEntity.canPlaceAt(event.position, this)) return;
+			this.globalPosition = pointInitialPosition;
+		});
 
-		this.addEventListener(`render`, (event) => {
+		this.addEventListener(`render`, () => {
 			context.save();
 			context.fillStyle = Renderer.colorHighlight.pass(0.1).toString(true);
 			context.strokeStyle = Renderer.colorHighlight.toString(true);
@@ -65,23 +94,17 @@ class VerticeEntity extends Entity {
 	set size(value) {
 		throw new TypeError(`Cannot set property position of #<VerticeEntity> which has only a getter`);
 	}
+	/** @readonly */
 	get diameter() {
-		return max(super.size.x, super.size.y);
-	}
-	set diameter(value) {
-		super.size = Point2D.repeat(value);
+		return VerticeEntity.#diameter;
 	}
 }
 //#endregion
 //#region Edge entity
-class EdgeEntity extends Entity {
-
-}
 //#endregion
 
 //#region Definition
 const inputVerticeTool = document.getElement(HTMLInputElement, `input#vertice-tool`);
-const inputEdgeTool = document.getElement(HTMLInputElement, `input#edge-tool`);
 const buttonCaptureCanvas = document.getElement(HTMLButtonElement, `button#capture-canvas`);
 //#endregion
 
@@ -89,57 +112,20 @@ await window.load(Promise.fulfill(() => { }), 200, 1000);
 
 //#region Canvas
 //#region Vertice drawing
-progenitor.addEventListener(`pointerdown`, async (event) => {
+userInterface.addEventListener(`click`, (event) => {
 	if (!inputVerticeTool.checked) return;
-	if (!(event instanceof PointerEvent)) return;
-	const controller = new AbortController();
-	const pointBeginPosition = event.position;
-	const verticeAlreadyExist = VerticeEntity.getVerticeAt(pointBeginPosition);
-	await (/** @type {Promise<void>} */ (new Promise((resolve) => {
-		if (verticeAlreadyExist === null) {
-			//#region New instance
-			progenitor.addEventListener(`pointerup`, (event2) => {
-				if (!(event2 instanceof PointerEvent)) return;
-				const pointEndPosition = event2.position;
-				if (VerticeEntity.getVerticeAt(pointEndPosition) !== null) return;
-				const verticeNewInstance = new VerticeEntity(`Vertice`);
-				verticeNewInstance.globalPosition = pointEndPosition;
-				progenitor.children.add(verticeNewInstance);
-				resolve();
-			}, { signal: controller.signal });
-			//#endregion
-		} else {
-			//#region Already exist
-			const pointInitialPosition = verticeAlreadyExist.globalPosition;
-			progenitor.addEventListener(`pointerup`, (event2) => {
-				if (!(event2 instanceof PointerEvent)) return;
-				const pointCurrentPosition = verticeAlreadyExist.globalPosition;
-				if (hypot(pointInitialPosition.x - pointCurrentPosition.x, pointInitialPosition.y - pointCurrentPosition.y) < 1) {
-					progenitor.children.remove(verticeAlreadyExist);
-				} else if (VerticeEntity.getVerticeAt(pointCurrentPosition, verticeAlreadyExist) !== null) {
-					verticeAlreadyExist.globalPosition = pointInitialPosition;
-				}
-				resolve();
-			}, { signal: controller.signal });
-			progenitor.addEventListener(`pointermove`, (event2) => {
-				if (!(event2 instanceof PointerEvent)) return;
-				verticeAlreadyExist.globalPosition = event2.position;
-			}, { signal: controller.signal });
-			//#endregion
-		}
-	})));
-	controller.abort();
+	if (!VerticeEntity.canPlaceAt(event.position)) return;
+	const verticeNewInstance = new VerticeEntity(`Vertice`);
+	verticeNewInstance.globalPosition = event.position;
+	userInterface.children.add(verticeNewInstance);
 });
 //#endregion
 //#region Edge drawing
-progenitor.addEventListener(`pointerdown`, async (event) => {
-	if (!inputEdgeTool.checked) return;
 
-});
 //#endregion
 //#endregion
 
-buttonCaptureCanvas.addEventListener(`click`, async (event) => {
+buttonCaptureCanvas.addEventListener(`click`, async () => {
 	try {
 		canvas.toBlob((blob) => {
 			if (blob === null) throw new ReferenceError(`Unable to initialize canvas for capture`);
